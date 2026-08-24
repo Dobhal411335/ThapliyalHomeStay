@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
  * Full JWT signature verification happens in each API route handler.
  */
 
-const COOKIE_NAME = "ThapliyalHomeStay_token";
+const COOKIE_NAME = "thapliyal_token";
 
 export function proxy(request) {
   const { pathname } = request.nextUrl;
