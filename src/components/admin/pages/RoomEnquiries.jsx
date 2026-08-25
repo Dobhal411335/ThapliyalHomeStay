@@ -65,6 +65,18 @@ function statusBadgeClass(status) {
   return "border-warning/30 bg-warning/10 text-warning";
 }
 
+function getEnquiryListingType(enquiry) {
+  if (enquiry?.listingType === "room" || enquiry?.listingType === "hotel") {
+    return enquiry.listingType;
+  }
+  if (enquiry?.hotel?.listingType === "room") return "room";
+  return "hotel";
+}
+
+function listingTypeLabel(type) {
+  return type === "room" ? "Single room" : "Hotel room";
+}
+
 function DetailRow({ label, value }) {
   if (value === null || value === undefined || value === "") return null;
   return (
@@ -82,6 +94,7 @@ export default function RoomEnquiries() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedListingType, setSelectedListingType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -123,13 +136,21 @@ export default function RoomEnquiries() {
   }, [enquiries]);
 
   const filteredEnquiries = useMemo(() => {
-    if (selectedMonth === "all") return enquiries;
-    return monthGroups[selectedMonth] || [];
-  }, [enquiries, monthGroups, selectedMonth]);
+    let list = enquiries;
+    if (selectedMonth !== "all") {
+      list = monthGroups[selectedMonth] || [];
+    }
+    if (selectedListingType !== "all") {
+      list = list.filter(
+        (enquiry) => getEnquiryListingType(enquiry) === selectedListingType
+      );
+    }
+    return list;
+  }, [enquiries, monthGroups, selectedMonth, selectedListingType]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedMonth, enquiries.length]);
+  }, [selectedMonth, selectedListingType, enquiries.length]);
 
   const totalPages = Math.max(
     1,
@@ -139,6 +160,11 @@ export default function RoomEnquiries() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  function resetFilters() {
+    setSelectedMonth("all");
+    setSelectedListingType("all");
+  }
 
   function handleView(enquiry) {
     setSelectedEnquiry(enquiry);
@@ -202,34 +228,70 @@ export default function RoomEnquiries() {
   const guestName = selectedEnquiry
     ? `${selectedEnquiry.firstName || ""} ${selectedEnquiry.lastName || ""}`.trim()
     : "";
+  const selectedListingTypeValue = selectedEnquiry
+    ? getEnquiryListingType(selectedEnquiry)
+    : "hotel";
+  const isSingleRoomEnquiry = selectedListingTypeValue === "room";
+  const selectedRoomName =
+    selectedEnquiry?.room?.name ||
+    selectedEnquiry?.roomName ||
+    selectedEnquiry?.room?.title ||
+    "—";
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <AdminPageHeader
         title="Room enquiries"
-        description="Booking enquiries submitted from room detail pages."
+        description="Booking enquiries submitted from hotel and single room detail pages."
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-body text-sm text-muted">
-          {filteredEnquiries.length} enquir
-          {filteredEnquiries.length === 1 ? "y" : "ies"}
-        </p>
+      <div className="flex flex-col gap-4 rounded-card border border-border bg-card p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="grid w-full gap-3 sm:grid-cols-2 sm:gap-4 lg:max-w-xl">
+          <div className="space-y-1.5">
+            <label className="font-ui text-xs font-medium text-muted">
+              Month
+            </label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue placeholder="All months" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {Object.keys(monthGroups).map((month) => (
+                  <SelectItem key={month} value={month}>
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="font-ui text-xs font-medium text-muted">
+              Listing type
+            </label>
+            <Select
+              value={selectedListingType}
+              onValueChange={setSelectedListingType}
+            >
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue placeholder="All listings" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All listings</SelectItem>
+                <SelectItem value="hotel">Hotel rooms</SelectItem>
+                <SelectItem value="room">Single rooms</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
-          <span className="font-ui text-xs font-medium text-muted">Month</span>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[200px] bg-card">
-              <SelectValue placeholder="All months" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All months</SelectItem>
-              {Object.keys(monthGroups).map((month) => (
-                <SelectItem key={month} value={month}>
-                  {month}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <p className="font-body text-sm text-muted">
+            {filteredEnquiries.length} enquir
+            {filteredEnquiries.length === 1 ? "y" : "ies"}
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={resetFilters}>
+            Reset
+          </Button>
         </div>
       </div>
 
@@ -253,6 +315,7 @@ export default function RoomEnquiries() {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="font-ui text-heading">Date</TableHead>
                   <TableHead className="font-ui text-heading">Ref</TableHead>
+                  <TableHead className="font-ui text-heading">Type</TableHead>
                   <TableHead className="font-ui text-heading">Hotel</TableHead>
                   <TableHead className="font-ui text-heading">Room</TableHead>
                   <TableHead className="font-ui text-heading">Guest</TableHead>
@@ -265,60 +328,82 @@ export default function RoomEnquiries() {
               </TableHeader>
               <TableBody>
                 {currentItems.length > 0 ? (
-                  currentItems.map((enquiry, index) => (
-                    <TableRow
-                      key={enquiry._id}
-                      className={cn(
-                        "border-border",
-                        index % 2 === 1 && "bg-surface/60"
-                      )}
-                    >
-                      <TableCell className="font-body text-sm text-muted">
-                        {formatDate(enquiry.createdAt)}
-                      </TableCell>
-                      <TableCell className="font-ui text-xs text-heading">
-                        {enquiry.enquiryId || "—"}
-                      </TableCell>
-                      <TableCell className="max-w-[180px] truncate font-body text-sm text-heading">
-                        {enquiry.hotelName || enquiry.hotel?.title || "—"}
-                      </TableCell>
-                      <TableCell className="max-w-[180px] truncate font-body text-sm text-heading">
-                        {enquiry.room?.name || enquiry.roomName || enquiry.room?.title || "—"}
-                      </TableCell>
-                      <TableCell className="font-body text-sm text-heading">
-                        {enquiry.firstName} {enquiry.lastName}
-                      </TableCell>
-                      <TableCell className="font-body text-sm text-muted">
-                        {formatDate(enquiry.arrival)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "font-ui text-[10px] uppercase tracking-wide",
-                            statusBadgeClass(enquiry.status)
-                          )}
-                        >
-                          {enquiry.status || "Pending"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="size-8"
-                          onClick={() => handleView(enquiry)}
-                          aria-label="View enquiry"
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  currentItems.map((enquiry, index) => {
+                    const type = getEnquiryListingType(enquiry);
+                    const isSingle = type === "room";
+                    return (
+                      <TableRow
+                        key={enquiry._id}
+                        className={cn(
+                          "border-border",
+                          index % 2 === 1 && "bg-surface/60"
+                        )}
+                      >
+                        <TableCell className="font-body text-sm text-muted">
+                          {formatDate(enquiry.createdAt)}
+                        </TableCell>
+                        <TableCell className="font-ui text-xs text-heading">
+                          {enquiry.enquiryId || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-ui text-[10px] uppercase tracking-wide",
+                              isSingle
+                                ? "border-primary/30 bg-primary/10 text-primary"
+                                : "border-border bg-surface text-heading"
+                            )}
+                          >
+                            {listingTypeLabel(type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate font-body text-sm text-heading">
+                          {isSingle
+                            ? "—"
+                            : enquiry.hotelName || enquiry.hotel?.title || "—"}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate font-body text-sm text-heading">
+                          {enquiry.room?.name ||
+                            enquiry.roomName ||
+                            enquiry.room?.title ||
+                            "—"}
+                        </TableCell>
+                        <TableCell className="font-body text-sm text-heading">
+                          {enquiry.firstName} {enquiry.lastName}
+                        </TableCell>
+                        <TableCell className="font-body text-sm text-muted">
+                          {formatDate(enquiry.arrival)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-ui text-[10px] uppercase tracking-wide",
+                              statusBadgeClass(enquiry.status)
+                            )}
+                          >
+                            {enquiry.status || "Pending"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => handleView(enquiry)}
+                            aria-label="View enquiry"
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-48">
+                    <TableCell colSpan={9} className="h-48">
                       <div className="flex flex-col items-center justify-center gap-2 text-center">
                         <Inbox className="size-8 text-muted" />
                         <p className="font-heading text-lg text-heading">
@@ -388,17 +473,41 @@ export default function RoomEnquiries() {
           {selectedEnquiry && (
             <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5">
               <div className="rounded-card border border-border/60 bg-surface p-4">
-                <p className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-                  Hotel
-                </p>
-                <h3 className="mt-1 font-heading text-xl font-medium text-heading">
-                  {selectedEnquiry.hotelName || selectedEnquiry.hotel?.title || "—"}
-                </h3>
-                <p className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted mt-2">
+                <div className="mb-3">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-ui text-[10px] uppercase tracking-wide",
+                      isSingleRoomEnquiry
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-card text-heading"
+                    )}
+                  >
+                    {listingTypeLabel(selectedListingTypeValue)}
+                  </Badge>
+                </div>
+                {isSingleRoomEnquiry ? null : (
+                  <>
+                    <p className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+                      Hotel
+                    </p>
+                    <h3 className="mt-1 font-heading text-xl font-medium text-heading">
+                      {selectedEnquiry.hotelName ||
+                        selectedEnquiry.hotel?.title ||
+                        "—"}
+                    </h3>
+                  </>
+                )}
+                <p
+                  className={cn(
+                    "font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted",
+                    !isSingleRoomEnquiry && "mt-2"
+                  )}
+                >
                   Room
                 </p>
                 <h3 className="mt-1 font-heading text-xl font-medium text-heading">
-                  {selectedEnquiry.room?.name || selectedEnquiry.roomName || selectedEnquiry.room?.title || "—"}
+                  {selectedRoomName}
                 </h3>
                 {selectedEnquiry.roomSnapshot?.code ? (
                   <p className="mt-1 font-ui text-xs text-muted">
@@ -429,7 +538,10 @@ export default function RoomEnquiries() {
                       className="inline-flex items-center gap-1.5 text-primary hover:underline"
                     >
                       <Phone className="size-3.5" />
-                      {selectedEnquiry.countryCode ? `${selectedEnquiry.countryCode} ` : ""}{selectedEnquiry.callNo}
+                      {selectedEnquiry.countryCode
+                        ? `${selectedEnquiry.countryCode} `
+                        : ""}
+                      {selectedEnquiry.callNo}
                     </a>
                   }
                 />

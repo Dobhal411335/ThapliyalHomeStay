@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const RoomEnquirySchema = new mongoose.Schema(
   {
+    listingType: {
+      type: String,
+      enum: ["hotel", "room"],
+      default: "hotel",
+    },
     hotelId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hotel",
@@ -9,8 +14,8 @@ const RoomEnquirySchema = new mongoose.Schema(
     },
     hotelName: {
       type: String,
-      required: true,
       trim: true,
+      default: "",
     },
     roomId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -150,9 +150,8 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
           <div>
             <Logo tone="light" name={companyName} imageSrc={footerLogoSrc} />
-            <p className="mt-6 max-w-xs font-body text-sm leading-7 text-white">
-              A spiritual habitat in Rishikesh for those returning home to
-              themselves.
+            <p className="mt-6 mb-4 max-w-md text-justify font-body text-sm leading-7 text-white">
+              Discover a stay where warm hospitality, delicious dining, adventure, and the spiritual charm of the holy city come together. Enjoy a delightful experience at our multi-cuisine restaurant, offering a variety of freshly prepared flavors, while our convenient location makes it easy to explore nearby attractions, sacred landmarks, riverside ghats, vibrant local streets, and the timeless beauty of the Himalayas.
             </p>
           </div>
           <div>
@@ -227,7 +226,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="my-5 md:my-2 border-t border-white pt-8 text-center">
+        <div className="my-5 md:my-0 border-t border-white pt-8 text-center">
           <p className="font-ui text-xs text-white">
             © {year} {companyName}. All rights reserved.
           </p>

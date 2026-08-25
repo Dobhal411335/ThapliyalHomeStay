@@ -25,7 +25,7 @@ export function TestimonialsBanner() {
           Voices of <em className="font-normal italic text-primary">peace.</em>
         </h1>
         <p className="mt-6 max-w-xl font-body text-base leading-relaxed text-muted md:text-lg">
-          What people say after leaving ThapliyalHomeStay matters more to us than anything
+          What people say after leaving Thapliyal Home Stay matters more to us than anything
           we could say about ourselves.
         </p>
       </Container>

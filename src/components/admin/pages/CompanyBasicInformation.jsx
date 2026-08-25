@@ -21,6 +21,7 @@ const createEmptyFormData = () => ({
   companyName: '',
   companyDomainName: '',
   contactNumbers: [''],
+  whatsappNumber: '',
   mainLogo: { url: '', key: '' },
   footerLogo: { url: '', key: '' },
   mobileUiLogo: { url: '', key: '' },
@@ -54,6 +55,7 @@ const normalizeCompanyInfo = (record) => ({
   companyName: record?.companyName || '',
   companyDomainName: record?.companyDomainName || '',
   contactNumbers: normalizeArray(record?.contactNumbers),
+  whatsappNumber: record?.whatsappNumber || '',
   mainLogo: record?.mainLogo || { url: '', key: '' },
   footerLogo: record?.footerLogo || { url: '', key: '' },
   mobileUiLogo: record?.mobileUiLogo || { url: '', key: '' },
@@ -107,7 +109,7 @@ const CompanyBasicInformation = () => {
   const handleArrayChange = (field, index, value) => {
     setFormData((prev) => {
       const nextValues = [...prev[field]]
-      nextValues[index] = field === 'contactNumbers' ? value.replace(/\D/g, '').slice(0, 10) : value
+      nextValues[index] = field === 'contactNumbers' || field === 'whatsappNumber' ? value.replace(/\D/g, '').slice(0, 10) : value
       return { ...prev, [field]: nextValues }
     })
   }
@@ -179,6 +181,12 @@ const CompanyBasicInformation = () => {
       toast.error('Each contact number must be exactly 10 digits', { style: { borderRadius: "10px", border: "1px solid #fee2e2", background: "#fef2f2", color: "#991b1b" } })
       return
     }
+    
+    if (formData.whatsappNumber && formData.whatsappNumber.length !== 10) {
+      toast.error('WhatsApp number must be exactly 10 digits', { style: { borderRadius: "10px", border: "1px solid #fee2e2", background: "#fef2f2", color: "#991b1b" } })
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -346,6 +354,28 @@ const CompanyBasicInformation = () => {
                         ) : null}
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* WhatsApp Number */}
+                <div className="space-y-4 pt-4 border-t border-slate-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-sm font-medium text-slate-600 ml-1">WhatsApp Number</Label>
+                  </div>
+                  <div className="flex gap-3 group items-center">
+                    <div className="flex h-11 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-500">
+                      +91
+                    </div>
+                    <Input
+                      type="tel"
+                      name="whatsappNumber"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={formData.whatsappNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, whatsappNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                      placeholder="1234567890"
+                      className="h-11 rounded-xl border-slate-200 focus-visible:ring-slate-200 focus-visible:border-slate-400 bg-slate-50/50 transition-colors hover:bg-slate-50"
+                    />
                   </div>
                 </div>
               </CardContent>

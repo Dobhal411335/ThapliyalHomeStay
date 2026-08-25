@@ -1,14 +1,23 @@
+import mongoose from "mongoose";
 import connectDB from "@/lib/connectDB";
 import Hotel from "@/models/Admin/Hotel";
+import "@/models/Admin/Room";
 import "@/models/Admin/RoomAmenities";
 import "@/models/Admin/RoomPrice";
 
+function json(data, status = 200) {
+  return Response.json(data, { status });
+}
+
+function normalizeId(id) {
+  if (Array.isArray(id)) return String(id[0] || "").trim();
+  return String(id || "").trim();
+}
+
 export async function GET(req, { params }) {
-  const { id } = await params;
-  if (!id) {
-    return new Response(JSON.stringify({ error: "Hotel ID is required" }), {
-      status: 400,
-    });
+  const id = normalizeId((await params).id);
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return json({ error: "Hotel ID is required" }, 400);
   }
   try {
     await connectDB();
@@ -17,64 +26,90 @@ export async function GET(req, { params }) {
       .populate("prices")
       .lean();
     if (!room) {
-      return new Response(JSON.stringify({ error: "Hotel not found" }), {
-        status: 404,
-      });
+      return json({ error: "Hotel not found" }, 404);
     }
-    return new Response(JSON.stringify(room), { status: 200 });
+    return json(room);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return json({ error: error.message }, 500);
   }
 }
 
 export async function PUT(req, { params }) {
-  const { id } = await params;
-  if (!id) {
-    return new Response(JSON.stringify({ error: "Hotel ID is required" }), {
-      status: 400,
-    });
+  const id = normalizeId((await params).id);
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return json({ error: "Hotel ID is required" }, 400);
   }
   try {
     await connectDB();
     const body = await req.json();
-    const updated = await Hotel.findByIdAndUpdate(id, body, { new: true });
-    if (!updated) {
-      return new Response(JSON.stringify({ error: "Hotel not found" }), {
-        status: 404,
-      });
+    const existing = await Hotel.findById(id);
+    if (!existing) {
+      return json({ error: "Hotel not found" }, 404);
     }
-    return new Response(JSON.stringify(updated), { status: 200 });
+
+    const title =
+      typeof body.title === "string" ? body.title.trim() : existing.title;
+    const code =
+      typeof body.code === "string" ? body.code.trim() : existing.code;
+    const slug =
+      typeof body.slug === "string" && body.slug.trim()
+        ? body.slug.trim()
+        : existing.slug;
+    const listingType =
+      body.listingType === "room" || body.listingType === "hotel"
+        ? body.listingType
+        : existing.listingType === "room"
+          ? "room"
+          : "hotel";
+    const active =
+      typeof body.active === "boolean" ? body.active : existing.active;
+
+    if (!title || !code || !slug) {
+      return json({ error: "Missing required fields" }, 400);
+    }
+
+    if (slug !== existing.slug) {
+      const clash = await Hotel.findOne({
+        slug,
+        _id: { $ne: existing._id },
+      }).lean();
+      if (clash) {
+        return json(
+          { error: "A listing with this name already exists." },
+          409
+        );
+      }
+    }
+
+    existing.title = title;
+    existing.code = code;
+    existing.slug = slug;
+    existing.listingType = listingType;
+    existing.active = active;
+    await existing.save();
+
+    return json(existing);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    if (error?.code === 11000) {
+      return json({ error: "A listing with this name already exists." }, 409);
+    }
+    return json({ error: error.message }, 500);
   }
 }
 
 export async function DELETE(req, { params }) {
-  const { id } = await params;
-  if (!id) {
-    return new Response(JSON.stringify({ error: "Hotel ID is required" }), {
-      status: 400,
-    });
+  const id = normalizeId((await params).id);
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return json({ error: "Hotel ID is required" }, 400);
   }
   try {
     await connectDB();
     const deleted = await Hotel.findByIdAndDelete(id);
     if (!deleted) {
-      return new Response(JSON.stringify({ error: "Hotel not found" }), {
-        status: 404,
-      });
+      return json({ error: "Hotel not found" }, 404);
     }
-    return new Response(
-      JSON.stringify({ message: "Hotel deleted successfully" }),
-      { status: 200 }
-    );
+    return json({ message: "Hotel deleted successfully" });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return json({ error: error.message }, 500);
   }
 }

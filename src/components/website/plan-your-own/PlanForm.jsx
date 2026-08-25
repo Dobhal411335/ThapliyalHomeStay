@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { countryCodes } from "@/lib/countryCodes";
+import { useCompanyBasicInfo } from "@/providers/CompanyBasicInfoProvider";
 
 /* ── Validation schema ─────────────────────────────── */
 const schema = z.object({
@@ -83,6 +84,8 @@ function FieldError({ message }) {
 
 /* ── Main form ─────────────────────────────────────── */
 export function PlanForm() {
+  const companyInfo = useCompanyBasicInfo();
+  const whatsappNumber = (companyInfo?.whatsappNumber || companyInfo?.contactNumbers?.[0] || "").replace(/\D/g, "");
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -395,7 +398,7 @@ export function PlanForm() {
                   </button>
 
                   <a
-                    href="https://wa.me/+919762240419?text=Hi%2C%20I%27d%20like%20to%20plan%20a%20retreat."
+                    href={`https://wa.me/${whatsappNumber}?text=Hi%2C%20I%27d%20like%20to%20plan%20a%20retreat.`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-button)] border border-black text-black px-7 font-body text-sm transition-colors hover:border-primary/50 hover:text-primary"

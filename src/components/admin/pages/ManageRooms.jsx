@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
@@ -46,7 +47,81 @@ function slugify(str) {
     .replace(/-+/g, "-");
 }
 
-export default function ManageRoom() {
+function getListingId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (value.$oid) return value.$oid;
+  return String(value);
+}
+
+const LISTING_COPY = {
+  hotel: {
+    headerTitle: "Manage Hotels",
+    headerDescription:
+      "Create hotels and open the editor to add photos, prices, and amenities.",
+    formTitleNew: "New hotel",
+    formTitleEdit: "Edit hotel",
+    formHint: "Start with a title and code, then complete details in the editor.",
+    codeLabel: "Hotel Code",
+    titleLabel: "Hotel title",
+    titlePlaceholder: "Garden cottage",
+    activeHint: "Inactive hotels stay hidden on the website.",
+    addLabel: "Add hotel",
+    updateLabel: "Update hotel",
+    addedToast: "Hotel added.",
+    updatedToast: "Hotel updated.",
+    addError: "Failed to add hotel.",
+    updateError: "Failed to update hotel.",
+    listTitle: "All hotels",
+    emptyTitle: "No hotels yet",
+    emptyHint: "Create your first hotel above.",
+    deleteTitle: "Delete hotel ?",
+    deletedToast: "Hotel deleted.",
+    deleteError: "Failed to delete hotel.",
+    tableHead: "Hotel",
+    copyAria: "Copy hotel URL",
+    deleteAria: "Delete hotel",
+    pathPrefix: "/hotel",
+  },
+  room: {
+    headerTitle: "Manage Rooms",
+    headerDescription:
+      "Create standalone rooms without attaching them to a hotel.",
+    formTitleNew: "New room",
+    formTitleEdit: "Edit room",
+    formHint: "Start with a title and code, then complete details in the editor.",
+    codeLabel: "Room Code",
+    titleLabel: "Room title",
+    titlePlaceholder: "Deluxe room",
+    activeHint: "Inactive rooms stay hidden on the website.",
+    addLabel: "Add room",
+    updateLabel: "Update room",
+    addedToast: "Room added.",
+    updatedToast: "Room updated.",
+    addError: "Failed to add room.",
+    updateError: "Failed to update room.",
+    listTitle: "All rooms",
+    emptyTitle: "No rooms yet",
+    emptyHint: "Create your first room above.",
+    deleteTitle: "Delete room ?",
+    deletedToast: "Room deleted.",
+    deleteError: "Failed to delete room.",
+    tableHead: "Room",
+    copyAria: "Copy room URL",
+    deleteAria: "Delete room",
+    pathPrefix: "/room",
+  },
+};
+
+export default function ManageRoom({ listingType: listingTypeProp }) {
+  const pathname = usePathname();
+  const listingType =
+    listingTypeProp === "room" || listingTypeProp === "hotel"
+      ? listingTypeProp
+      : pathname?.includes("/create_room")
+        ? "room"
+        : "hotel";
+  const copy = LISTING_COPY[listingType] || LISTING_COPY.hotel;
   const { handleSubmit, reset } = useForm();
   const formRef = useRef(null);
   const [editingRoomId, setEditingRoomId] = useState(null);
@@ -64,9 +139,14 @@ export default function ManageRoom() {
   async function fetchRooms() {
     setLoadingList(true);
     try {
-      const response = await fetch("/api/room");
+      const response = await fetch(`/api/room?listingType=${listingType}`);
       const data = await response.json();
-      setProducts(Array.isArray(data.rooms) ? data.rooms : []);
+      const rooms = Array.isArray(data.rooms) ? data.rooms : [];
+      setProducts(
+        listingType === "room"
+          ? rooms.filter((item) => item.listingType === "room")
+          : rooms.filter((item) => item.listingType !== "room")
+      );
     } catch {
       setProducts([]);
     } finally {
@@ -77,7 +157,7 @@ export default function ManageRoom() {
   useEffect(() => {
     setProductCode(generateCode());
     fetchRooms();
-  }, []);
+  }, [listingType]);
 
   function handleEditProduct(prod) {
     reset({
@@ -89,7 +169,7 @@ export default function ManageRoom() {
     setActive(typeof prod.active === "boolean" ? prod.active : true);
     setOrder(prod.order || 1);
     setTitle(prod.title || "");
-    setEditingRoomId(prod._id || null);
+    setEditingRoomId(getListingId(prod._id));
     setIsEditing(true);
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   }
@@ -112,17 +192,17 @@ export default function ManageRoom() {
   async function deletePackage(id) {
     setDeleting(true);
     try {
-      const response = await fetch(`/api/room/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/room/${getListingId(id)}`, { method: "DELETE" });
       const result = await response.json();
       if (response.ok) {
         setProducts((prev) => prev.filter((prod) => prod._id !== id));
-        toast.success("Room deleted.");
+        toast.success(copy.deletedToast);
         setDeleteTarget(null);
       } else {
-        toast.error(result.error || result.message || "Failed to delete room.");
+        toast.error(result.error || result.message || copy.deleteError);
       }
     } catch {
-      toast.error("Failed to delete room.");
+      toast.error(copy.deleteError);
     } finally {
       setDeleting(false);
     }
@@ -139,23 +219,31 @@ export default function ManageRoom() {
         title,
         code: productCode,
         slug: slugify(title),
+        listingType,
         order,
         active: typeof active === "boolean" ? active : true,
       };
 
       if (isEditing) {
-        const response = await fetch(`/api/room/${editingRoomId}`, {
+        const listingId = getListingId(editingRoomId);
+        const response = await fetch(`/api/room/${listingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: productCode, ...payload }),
+          body: JSON.stringify({
+            title: payload.title,
+            code: payload.code,
+            slug: payload.slug,
+            listingType: payload.listingType,
+            active: payload.active,
+          }),
         });
         const result = await response.json();
         if (response.ok) {
-          toast.success("Hotel updated.");
+          toast.success(copy.updatedToast);
           handleCancelEdit();
           await fetchRooms();
         } else {
-          toast.error(result.message || "Failed to update hotel.");
+          toast.error(result.error || result.message || copy.updateError);
         }
       } else {
         const response = await fetch("/api/room", {
@@ -165,11 +253,11 @@ export default function ManageRoom() {
         });
         const result = await response.json();
         if (response.ok) {
-          toast.success("Hotel added.");
+          toast.success(copy.addedToast);
           handleCancelEdit();
           await fetchRooms();
         } else {
-          toast.error(result.error || result.message || "Failed to add hotel.");
+          toast.error(result.error || result.message || copy.addError);
         }
       }
     } catch (error) {
@@ -182,8 +270,8 @@ export default function ManageRoom() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8">
       <AdminPageHeader
-        title="Manage Hotels"
-        description="Create hotels and open the editor to add photos, prices, and amenities."
+        title={copy.headerTitle}
+        description={copy.headerDescription}
       />
 
       <form
@@ -194,10 +282,10 @@ export default function ManageRoom() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl font-medium text-heading">
-              {isEditing ? "Edit hotel" : "New hotel"}
+              {isEditing ? copy.formTitleEdit : copy.formTitleNew}
             </h2>
             <p className="mt-1 font-body text-sm text-muted">
-              Start with a title and code, then complete details in the editor.
+              {copy.formHint}
             </p>
           </div>
         </div>
@@ -205,16 +293,16 @@ export default function ManageRoom() {
         <div className="grid gap-5 sm:grid-cols-[140px_1fr]">
           <div className="space-y-2">
             <Label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-            Hotel Code
+              {copy.codeLabel}
             </Label>
             <Input value={productCode} readOnly className="bg-surface font-ui" />
           </div>
           <div className="space-y-2">
             <Label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-              Hotel title
+              {copy.titleLabel}
             </Label>
             <Input
-              placeholder="Garden cottage"
+              placeholder={copy.titlePlaceholder}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -225,7 +313,7 @@ export default function ManageRoom() {
           <div>
             <p className="font-ui text-sm font-medium text-heading">Active</p>
             <p className="font-body text-xs text-muted">
-              Inactive hotels stay hidden on the website.
+              {copy.activeHint}
             </p>
           </div>
           <Switch checked={active} onCheckedChange={setActive} />
@@ -240,7 +328,7 @@ export default function ManageRoom() {
             ) : (
               <Plus className="size-4" />
             )}
-            {isEditing ? "Update hotel" : "Add hotel"}
+            {isEditing ? copy.updateLabel : copy.addLabel}
           </Button>
           {isEditing ? (
             <Button type="button" variant="outline" onClick={handleCancelEdit}>
@@ -253,7 +341,7 @@ export default function ManageRoom() {
       <div className="overflow-hidden rounded-card border border-border bg-card shadow-sm">
         <div className="border-b border-border px-5 py-4">
           <h2 className="font-heading text-xl font-medium text-heading">
-            All hotels
+            {copy.listTitle}
           </h2>
           <p className="mt-1 font-body text-sm text-muted">
             {products.length} total
@@ -270,7 +358,7 @@ export default function ManageRoom() {
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="font-ui text-heading">#</TableHead>
-                <TableHead className="font-ui text-heading">Hotel</TableHead>
+                <TableHead className="font-ui text-heading">{copy.tableHead}</TableHead>
                 <TableHead className="font-ui text-heading">Code</TableHead>
                 <TableHead className="font-ui text-heading">URL</TableHead>
                 <TableHead className="w-[160px] text-right font-ui text-heading">
@@ -283,7 +371,7 @@ export default function ManageRoom() {
                 products.map((prod, index) => {
                   const url =
                     typeof window !== "undefined"
-                      ? `${window.location.origin}/hotel/${prod.slug || slugify(prod.title)}`
+                      ? `${window.location.origin}${copy.pathPrefix}/${prod.slug || slugify(prod.title)}`
                       : "";
                   return (
                     <TableRow
@@ -310,7 +398,7 @@ export default function ManageRoom() {
                           className="size-8"
                           onClick={() => copyToClipboard(url)}
                           disabled={!url}
-                          aria-label="Copy hotel URL"
+                          aria-label={copy.copyAria}
                         >
                           <Copy className="size-4" />
                         </Button>
@@ -321,7 +409,7 @@ export default function ManageRoom() {
                             variant="outline"
                             size="sm"
                             nativeButton={false}
-                            render={<Link href={`/admin/edit_room/${prod._id}`} />}
+                            render={<Link href={`/admin/edit_room/${getListingId(prod._id)}?type=${listingType}`} />}
                           >
                             Edit
                           </Button>
@@ -341,7 +429,7 @@ export default function ManageRoom() {
                             size="icon"
                             className="size-8 text-error hover:text-error"
                             onClick={() => setDeleteTarget(prod)}
-                            aria-label="Delete hotel"
+                            aria-label={copy.deleteAria}
                           >
                             <Trash2 className="size-3.5" />
                           </Button>
@@ -354,10 +442,10 @@ export default function ManageRoom() {
                 <TableRow>
                   <TableCell colSpan={5} className="h-40 text-center">
                     <p className="font-heading text-lg text-heading">
-                      No hotels yet
+                      {copy.emptyTitle}
                     </p>
                     <p className="mt-1 font-body text-sm text-muted">
-                      Create your first hotel above.
+                      {copy.emptyHint}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -376,7 +464,7 @@ export default function ManageRoom() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-heading text-xl text-heading">
-              Delete hotel ?
+              {copy.deleteTitle}
             </DialogTitle>
             <DialogDescription className="font-body text-sm text-muted">
               This will permanently remove{" "}

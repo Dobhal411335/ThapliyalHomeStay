@@ -56,7 +56,7 @@ const FontSize = Extension.create({
   },
 })
 
-const productInfo = ({ roomData, roomId }) => {
+const productInfo = ({ roomData, roomId, mode = "hotel" }) => {
   const [sections, setSections] = useState([]); // Array of {title, description}
   const [tableLoading, setTableLoading] = useState(false);
   const [viewModal, setViewModal] = useState(false);
@@ -227,6 +227,7 @@ const productInfo = ({ roomData, roomId }) => {
   };
 
   const productTitle = roomData?.title || "";
+  const isSingleRoom = mode === "room";
   const [loading, setLoading] = useState(false);
 
   const openDeleteModal = (idx) => {
@@ -305,7 +306,15 @@ const productInfo = ({ roomData, roomId }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!roomId || !heading.trim()) {
-      toast.error('Please provide both a main image, title and description for this section.');
+      toast.error(
+        isSingleRoom
+          ? "Please provide a heading for this room."
+          : "Please provide a heading for this hotel."
+      );
+      return;
+    }
+    if (!isSingleRoom && !selectedMainImage) {
+      toast.error("Please provide a main image for this hotel.");
       return;
     }
     setLoading(true);
@@ -319,7 +328,15 @@ const productInfo = ({ roomData, roomId }) => {
         const res = await fetch('/api/roomInfo', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, heading: heading.trim(), paragraph: description, mainPhoto: selectedMainImage, relatedPhotos: selectedSubImages, ...seoPayload })
+          body: JSON.stringify({
+            roomId,
+            heading: heading.trim(),
+            paragraph: description,
+            ...(isSingleRoom
+              ? {}
+              : { mainPhoto: selectedMainImage, relatedPhotos: selectedSubImages }),
+            ...seoPayload,
+          })
         });
         const data = await res.json();
         if (!res.ok || data.error) {
@@ -337,7 +354,15 @@ const productInfo = ({ roomData, roomId }) => {
         const res = await fetch('/api/roomInfo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, heading: heading.trim(), paragraph: description, mainPhoto: selectedMainImage, relatedPhotos: selectedSubImages, ...seoPayload })
+          body: JSON.stringify({
+            roomId,
+            heading: heading.trim(),
+            paragraph: description,
+            ...(isSingleRoom
+              ? {}
+              : { mainPhoto: selectedMainImage, relatedPhotos: selectedSubImages }),
+            ...seoPayload,
+          })
         });
         const data = await res.json();
         if (!res.ok || data.error) {
@@ -362,10 +387,13 @@ const productInfo = ({ roomData, roomId }) => {
           Basic info
         </h2>
         <p className="mt-1 font-body text-sm text-muted">
-          Heading, description, and gallery for this hotel.
+          {isSingleRoom
+            ? "Heading and description for this room."
+            : "Heading, description, and gallery for this hotel."}
         </p>
       </div>
 
+      {isSingleRoom ? null : (
       <div className="space-y-2">
         <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
           Hotel name
@@ -378,6 +406,7 @@ const productInfo = ({ roomData, roomId }) => {
           className="bg-surface"
         />
       </div>
+      )}
 
       <div className="rounded-[var(--radius-card)] border border-border/60 bg-card/40 p-4">
         <SeoFields
@@ -390,18 +419,22 @@ const productInfo = ({ roomData, roomId }) => {
 
       <div className="space-y-2">
         <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-          Hotel heading
+          {isSingleRoom ? "Room heading" : "Hotel heading"}
         </label>
         <Input
           value={heading}
           onChange={(e) => setHeading(e.target.value)}
-          placeholder="A quiet hotel overlooking the garden"
+          placeholder={
+            isSingleRoom
+              ? "A quiet room overlooking the garden"
+              : "A quiet hotel overlooking the garden"
+          }
         />
       </div>
 
       <div className="space-y-2">
         <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-          Hotel description
+          {isSingleRoom ? "Room description" : "Hotel description"}
         </label>
         <div className="overflow-hidden rounded-card border border-border bg-card">
           {editor && (
@@ -443,6 +476,8 @@ const productInfo = ({ roomData, roomId }) => {
         </div>
       </div>
 
+      {isSingleRoom ? null : (
+      <>
       <div className="space-y-2">
         <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
           Main photo
@@ -452,7 +487,7 @@ const productInfo = ({ roomData, roomId }) => {
             <div className="relative mb-3 inline-block overflow-hidden rounded-image">
               <img
                 src={editGallery ? editMainImage?.url : selectedMainImage.url}
-                alt="Main hotel"
+                alt={isSingleRoom ? "Main room" : "Main hotel"}
                 className="max-h-40 rounded-image object-cover"
               />
               <button
@@ -550,6 +585,8 @@ const productInfo = ({ roomData, roomId }) => {
           </Button>
         </div>
       </div>
+      </>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={loading}>

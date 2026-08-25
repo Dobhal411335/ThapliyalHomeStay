@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/connectDB";
 import Hotel from "@/models/Admin/Hotel";
+import "@/models/Admin/Room";
 import "@/models/Admin/RoomAmenities";
 import "@/models/Admin/RoomPrice";
 
@@ -21,9 +22,15 @@ export async function GET(req) {
     const relatedRooms = await Hotel.find({
       _id: { $ne: currentRoom._id },
       active: true,
+      listingType:
+        currentRoom.listingType === "room"
+          ? "room"
+          : { $ne: "room" },
     })
+      .populate("rooms")
       .populate("amenities")
       .populate("prices")
+      .limit(5)
       .lean();
 
     return NextResponse.json({ relatedRooms });

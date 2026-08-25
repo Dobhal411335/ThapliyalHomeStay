@@ -5,7 +5,17 @@ export async function POST(req) {
   await connectDB();
   try {
     const { roomId, heading, paragraph, mainPhoto, relatedPhotos, titleLine, keywords } = await req.json();
-    if (!roomId || !heading || !mainPhoto) {
+    if (!roomId || !heading) {
+      return Response.json({ error: 'Missing roomId or heading' }, { status: 400 });
+    }
+
+    const existing = await Hotel.findById(roomId);
+    if (!existing) {
+      return Response.json({ error: 'Hotel not found' }, { status: 404 });
+    }
+
+    const isSingleRoom = existing.listingType === "room";
+    if (!isSingleRoom && !mainPhoto) {
       return Response.json({ error: 'Missing roomId, heading, or mainPhoto' }, { status: 400 });
     }
 
@@ -13,18 +23,19 @@ export async function POST(req) {
       ? keywords.map((k) => (k || '').trim()).filter(Boolean)
       : [];
 
-    const updatedRoom = await Hotel.findByIdAndUpdate(
-      roomId,
-      {
-        heading,
-        paragraph,
-        mainPhoto,
-        relatedPhotos,
-        titleLine: typeof titleLine === 'string' ? titleLine.trim() : '',
-        keywords: normalizedKeywords,
-      },
-      { new: true }
-    );
+    const update = {
+      heading,
+      paragraph,
+      titleLine: typeof titleLine === 'string' ? titleLine.trim() : '',
+      keywords: normalizedKeywords,
+    };
+
+    if (!isSingleRoom) {
+      update.mainPhoto = mainPhoto;
+      update.relatedPhotos = relatedPhotos;
+    }
+
+    const updatedRoom = await Hotel.findByIdAndUpdate(roomId, update, { new: true });
 
     if (!updatedRoom) {
       return Response.json({ error: 'Hotel not found' }, { status: 404 });
@@ -40,7 +51,7 @@ export async function POST(req) {
 export async function GET(req) {
   await connectDB();
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(req.url);  
     const roomId = searchParams.get('roomId');
     if (!roomId) {
       return Response.json({ error: 'Missing roomId' }, { status: 400 });
@@ -83,12 +94,13 @@ export async function DELETE(req) {
       return Response.json({ error: 'Missing roomId or sectionIndex' }, { status: 400 });
     }
     const room = await Hotel.findOne({ _id: roomId });
+    if (!room) {
+      return Response.json({ error: 'Hotel not found' }, { status: 404 });
+    }
     room.heading = "";
     room.paragraph = "";
     await room.save();
 
- 
-    // console.log('After delete/save:', infoDoc.info);
     return Response.json({ success: true, heading: "", paragraph: "", room: room });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });

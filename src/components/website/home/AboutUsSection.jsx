@@ -10,24 +10,12 @@ import { Section } from "@/components/common/Section";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AboutUsSection() {
-  const [featuredPackages, setFeaturedPackages] = useState([]);
-  const [packagesLoading, setPackagesLoading] = useState(true);
   const [offerDetails, setOfferDetails] = useState(null);
   const [banners, setBanners] = useState([]);
   const [bannersLoading, setBannersLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const response = await fetch("/api/featured-packages");
-        const data = await response.json();
-        setFeaturedPackages(data.data || []);
-      } catch {
-        setFeaturedPackages([]);
-      } finally {
-        setPackagesLoading(false);
-      }
-    };
+
 
     const fetchBanners = async () => {
       try {
@@ -51,7 +39,6 @@ export default function AboutUsSection() {
       }
     };
 
-    fetchPackages();
     fetchBanners();
     fetchOffers();
   }, []);
@@ -68,68 +55,10 @@ export default function AboutUsSection() {
     promoBanner &&
     (hasText(promoBanner.description) || hasText(promoBanner.link));
   const hasOffers = showLastMinuteDeal || showPromoBanner;
-  const showPackages = packagesLoading || featuredPackages.length > 0;
   const showBanners = bannersLoading || banners.length > 0;
 
   return (
     <>
-      {showPackages && (
-        <Section spacing="sm" className="bg-background">
-          <Container>
-            <div className="mb-12 max-w-xl">
-              <p className="font-ui text-xs uppercase tracking-[0.25em] text-muted">
-                Featured
-              </p>
-              <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
-                Experiences worth{" "}
-                <em className="italic text-primary">lingering</em> over.
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 gap-5 md:gap-8 lg:grid-cols-4">
-              {packagesLoading
-                ? Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={idx} className="flex flex-col gap-4">
-                      <Skeleton className="md:aspect-4/5 aspect-3/4 w-full md:rounded-image rounded-md" />
-                      <Skeleton className="h-6 w-3/4" />
-                    </div>
-                  ))
-                : featuredPackages.map((item) => (
-                    <Link
-                      key={item._id}
-                      href={item.link || "#"}
-                      className="group flex flex-col gap-4"
-                    >
-                      <div className="relative md:aspect-4/5 aspect-3/4 w-full overflow-hidden md:rounded-image rounded-md bg-border">
-                        {item.image?.url ? (
-                          <Image
-                            src={item.image.url}
-                            alt={item.title || "Featured experience"}
-                            fill
-                            sizes="(max-width: 768px) 50vw, 25vw"
-                            className="object-cover transition-transform duration-300 ease-smooth group-hover:scale-[1.03]"
-                          />
-                        ) : null}
-                        <div className="absolute inset-0 flex items-end bg-image-dark/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                          <span className="m-5 inline-flex items-center gap-1.5 font-ui text-xs uppercase tracking-[0.2em] text-white">
-                            View
-                            <ArrowUpRight
-                              className="size-3.5"
-                              aria-hidden="true"
-                            />
-                          </span>
-                        </div>
-                      </div>
-                      <h3 className="font-heading text-xl leading-snug text-heading transition-colors duration-300 group-hover:text-primary md:text-2xl">
-                        {item.title}
-                      </h3>
-                    </Link>
-                  ))}
-            </div>
-          </Container>
-        </Section>
-      )}
-
       {hasOffers && (
         <Section spacing="sm" className="bg-background pt-0">
           <Container>

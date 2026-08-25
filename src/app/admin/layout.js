@@ -1,7 +1,7 @@
 export const metadata = {
   title: {
-    default: "ThapliyalHomeStay CMS",
-    template: "%s | ThapliyalHomeStay CMS",
+    default: "Thapliyal Home Stay CMS",
+    template: "%s | Thapliyal Home Stay CMS",
   },
   robots: {
     index: false,

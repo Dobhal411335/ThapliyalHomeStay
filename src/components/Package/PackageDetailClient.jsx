@@ -37,6 +37,7 @@ import PackageCarouselWrapper from "@/components/Package/PackageCarouselWrapper.
 import PackageEnquiryModal from "@/components/Package/PackageEnquiryModal.jsx";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCompanyBasicInfo } from "@/providers/CompanyBasicInfoProvider";
 
 const accordionEase = [0.4, 0, 0.2, 1];
 
@@ -124,6 +125,8 @@ export default function PackageDetailClient({
   avgRating,
   formatNumericStr,
 }) {
+  const companyInfo = useCompanyBasicInfo();
+  const whatsappNumber = (companyInfo?.whatsappNumber || companyInfo?.contactNumbers?.[0] || "").replace(/\D/g, "");
   // console.log(packageDetails)
   const [openDayIndex, setOpenDayIndex] = useState(0);
   const [openSections, setOpenSections] = useState({});
@@ -1742,12 +1745,12 @@ export default function PackageDetailClient({
                     <Link
                       href={`tel:+919762240419`}
                       target="_blank"
-                      className="flex items-center justify-center rounded-button border border-border p-3 text-heading transition-colors hover:bg-surface"
+                      className="flex items-center justify-center rounded-button border border-gray-600 p-3 text-heading transition-colors hover:bg-surface"
                     >
                       <PhoneCall className="h-4 w-4" />
                     </Link>
                     <Link
-                      href={`https://wa.me/+919762240419?text=${encodeURIComponent(whatsappEnquiryMessage)}`}
+                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappEnquiryMessage)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex flex-1 items-center justify-center gap-1.5 rounded-button bg-success py-2.5 font-ui text-xs font-semibold text-white transition-colors hover:bg-success/90"

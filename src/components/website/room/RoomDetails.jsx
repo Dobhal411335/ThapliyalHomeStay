@@ -460,7 +460,7 @@ export default function RoomDetailView({ data }) {
                     nativeButton={false}
                     render={
                       <a
-                        href={`https://wa.me/${(companyInfo?.contactNumbers?.[0] || "").replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
+                        href={`https://wa.me/${(companyInfo?.whatsappNumber || companyInfo?.contactNumbers?.[0] || "").replace(/\D/g, "")}?text=${encodeURIComponent(whatsappMessage)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       />

@@ -13,6 +13,7 @@ const CompanyBasicInfoSchema = new mongoose.Schema(
     companyName: { type: String, default: '' },
     companyDomainName: { type: String, default: '' },
     contactNumbers: { type: [String], default: [] },
+    whatsappNumber: { type: String, default: '' },
     mainLogo: { type: imageSchema, default: () => ({ url: '', key: '' }) },
     footerLogo: { type: imageSchema, default: () => ({ url: '', key: '' }) },
     mobileUiLogo: { type: imageSchema, default: () => ({ url: '', key: '' }) },

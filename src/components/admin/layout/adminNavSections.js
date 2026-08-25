@@ -37,7 +37,7 @@ export const adminNavSections = [
         label: "Create Webpages",
         href: "/admin/create_webpage",
         icon: FileStack,
-      },     {
+      }, {
         label: "Manage Webpage",
         href: "/admin/manage_webpage",
         icon: FileStack,
@@ -150,6 +150,11 @@ export const adminNavSections = [
       {
         label: "Manage Hotels",
         href: "/admin/manage_hotels",
+        icon: Boxes,
+      },
+      {
+        label: "Manage Rooms",
+        href: "/admin/create_room",
         icon: Boxes,
       },
     ],

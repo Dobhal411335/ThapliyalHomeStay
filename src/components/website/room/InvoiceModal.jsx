@@ -125,7 +125,7 @@ export default function InvoiceModal({
           <div className="relative mb-3 h-12 w-36 overflow-hidden rounded-card bg-surface">
             <Image
               src="/logo.png"
-              alt="ThapliyalHomeStay"
+              alt="Thapliyal Home Stay"
               fill
               className="object-contain p-2"
               sizes="144px"
@@ -192,7 +192,7 @@ export default function InvoiceModal({
         availability and next steps. Keep this copy for your records.
       </p>
       <p className="text-center font-ui text-[11px] text-muted">
-        Automated acknowledgement · © {new Date().getFullYear()} ThapliyalHomeStay
+        Automated acknowledgement · © {new Date().getFullYear()} Thapliyal Home Stay
       </p>
     </div>
   );

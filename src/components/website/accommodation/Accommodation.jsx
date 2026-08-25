@@ -67,15 +67,14 @@ const Accommodation = () => {
     useEffect(() => {
         const fetchArtisan = async () => {
             try {
-                const res = await fetch("/api/room");
+                const res = await fetch("/api/room?listingType=hotel");
                 const data = await res.json();
-                if (Array.isArray(data)) {
-                    setRooms(data);
-                } else if (Array.isArray(data.rooms)) {
-                    setRooms(data.rooms);
-                } else {
-                    setRooms([]);
-                }
+                const list = Array.isArray(data)
+                    ? data
+                    : Array.isArray(data.rooms)
+                        ? data.rooms
+                        : [];
+                setRooms(list.filter((item) => item?.listingType !== "room"));
             } catch (error) {
                 setRooms([]);
             } finally {

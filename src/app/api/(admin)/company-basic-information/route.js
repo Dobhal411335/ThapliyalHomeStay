@@ -31,6 +31,7 @@ const normalizePayload = (payload) => ({
   companyName: String(payload?.companyName || '').trim(),
   companyDomainName: String(payload?.companyDomainName || '').trim(),
   contactNumbers: normalizeContactNumbers(payload?.contactNumbers),
+  whatsappNumber: String(payload?.whatsappNumber || '').replace(/\D/g, '').slice(0, 10),
   mainLogo: normalizeImage(payload?.mainLogo),
   footerLogo: normalizeImage(payload?.footerLogo),
   mobileUiLogo: normalizeImage(payload?.mobileUiLogo),

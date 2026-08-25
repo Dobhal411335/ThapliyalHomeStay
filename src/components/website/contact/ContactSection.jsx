@@ -119,7 +119,7 @@ export function ContactSection() {
               <ContactBlock label="WhatsApp / Call">
                 <div className="flex flex-col gap-5">
                   {contactNumbers.map((num, i) => {
-                    const waPhone = num.replace(/\D/g, "");
+                    const waPhone = (companyInfo?.whatsappNumber || num).replace(/\D/g, "");
                     const telPhone = num.replace(/\s+/g, "");
                     return (
                       <div key={i}>

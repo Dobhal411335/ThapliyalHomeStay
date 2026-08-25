@@ -15,12 +15,13 @@ const EMPTY_PRICES = {
   "Extra Bed": { price: "", oldPrice: "", cgst: "", sgst: "" },
 };
 
-export default function RoomPrice({ roomData, roomId }) {
+export default function RoomPrice({ roomData, roomId, mode = "hotel" }) {
   const [showExtraBed, setShowExtraBed] = useState(false);
   const [prices, setPrices] = useState(EMPTY_PRICES);
   const [editablePax, setEditablePax] = useState("01 Pax");
   const [saving, setSaving] = useState(false);
   const roomName = roomData?.title || "";
+  const isSingleRoom = mode === "room";
 
   useEffect(() => {
     async function fetchRoomPrice() {
@@ -85,7 +86,7 @@ export default function RoomPrice({ roomData, roomId }) {
         throw new Error(error.error || error.message || "Failed to save price");
       }
 
-      toast.success("Hotel price saved.");
+      toast.success(isSingleRoom ? "Room price saved." : "Hotel price saved.");
     } catch (err) {
       toast.error(err.message || "Failed to save price");
     } finally {
@@ -99,19 +100,21 @@ export default function RoomPrice({ roomData, roomId }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="font-heading text-xl font-medium text-heading">
-          Hotel price
+          {isSingleRoom ? "Room price" : "Hotel price"}
         </h2>
         <p className="mt-1 font-body text-sm text-muted">
           Set nightly rates for occupancy types.
         </p>
       </div>
 
+      {isSingleRoom ? null : (
       <div className="space-y-2">
         <Label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
           Hotel name
         </Label>
         <Input value={roomName || "Hotel name not found"} disabled className="bg-surface" />
       </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface px-4 py-3">
         {["01 Pax", "02 Pax"].map((type) => (

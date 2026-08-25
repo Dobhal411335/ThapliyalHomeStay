@@ -137,7 +137,7 @@ const PackageDetailsPage = async ({ params }) => {
     const companyInfo = await CompanyBasicInfo.findOne().lean()
     const contactNumber = companyInfo?.contactNumbers?.[0] || ""
     const contactLink = contactNumber.replace(/\s+/g, "")
-    const whatsappLink = contactNumber.replace(/\D/g, "")
+    const whatsappLink = (companyInfo?.whatsappNumber || contactNumber).replace(/\D/g, "")
 
     const formatNumber = (number) => {
         return new Intl.NumberFormat("en-IN").format(number)

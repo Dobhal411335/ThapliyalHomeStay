@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { countryCodes } from "@/lib/countryCodes";
+import { useCompanyBasicInfo } from "@/providers/CompanyBasicInfoProvider";
 
 const schema = z.object({
   packageName: z.string().min(1),
@@ -95,6 +96,8 @@ export default function PackageEnquiryModal({
   onOpenChange,
   packageDetails,
 }) {
+  const companyInfo = useCompanyBasicInfo();
+  const whatsappNumber = (companyInfo?.whatsappNumber || companyInfo?.contactNumbers?.[0] || "").replace(/\D/g, "");
   const [submitted, setSubmitted] = useState(false);
 
   const packageName = packageDetails?.packageName || "";
@@ -535,7 +538,7 @@ export default function PackageEnquiryModal({
                     </button>
 
                     <a
-                      href={`https://wa.me/+919762240419?text=${encodeURIComponent(
+                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
                         [
                           "Namaste 🙏",
                           "",

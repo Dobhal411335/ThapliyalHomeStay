@@ -45,7 +45,7 @@ const AMENITIES = ROOM_AMENITY_CATEGORIES.map((cat) => ({
   icon: getRoomAmenityCategoryIcon(cat.category),
 }));
 
-const RoomFormEntry = ({ room, index, handleChange, handleRemoveRoom, toggleAmenity, showRemoveButton, roomData }) => {
+const RoomFormEntry = ({ room, index, handleChange, handleRemoveRoom, toggleAmenity, showRemoveButton, roomData, isSingleRoom = false }) => {
   const editor = useEditor({
     extensions: [
       StarterKit, TextStyle, FontFamily, Typography,
@@ -176,6 +176,7 @@ const RoomFormEntry = ({ room, index, handleChange, handleRemoveRoom, toggleAmen
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {isSingleRoom ? null : (
         <div className="space-y-2">
           <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
             Hotel name
@@ -188,6 +189,7 @@ const RoomFormEntry = ({ room, index, handleChange, handleRemoveRoom, toggleAmen
             className="bg-surface"
           />
         </div>
+        )}
           <div className="space-y-2">
           <label className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
             Room name
@@ -389,8 +391,9 @@ const RoomFormEntry = ({ room, index, handleChange, handleRemoveRoom, toggleAmen
   );
 };
 
-const CreateRoom = ({ hotelId, roomData, roomId }) => {
+const CreateRoom = ({ hotelId, roomData, roomId, mode = "hotel" }) => {
   const productTitle = roomData?.title || "";
+  const isSingleRoom = mode === "room";
 
   const [rooms, setRooms] = useState([{
     id: Date.now(),
@@ -425,16 +428,17 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
             mainPhoto: r.mainPhoto || null,
             relatedPhotos: r.relatedPhotos || []
           }));
-          setRooms(fetchedRooms);
+          setRooms(isSingleRoom ? fetchedRooms.slice(0, 1) : fetchedRooms);
         }
       } catch (err) {
         console.error("Failed to fetch rooms:", err);
       }
     };
     fetchRooms();
-  }, [hotelId]);
+  }, [hotelId, isSingleRoom]);
 
   const handleAddRoom = () => {
+    if (isSingleRoom) return;
     setRooms([...rooms, {
       id: Date.now(),
       title: '',
@@ -449,6 +453,7 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
   };
 
   const handleRemoveRoom = (index) => {
+    if (isSingleRoom) return;
     if (rooms.length === 1) return;
     const updated = [...rooms];
     updated.splice(index, 1);
@@ -482,7 +487,7 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
     try {
       const payload = {
         hotelId,
-        rooms: rooms.map(r => ({
+        rooms: (isSingleRoom ? rooms.slice(0, 1) : rooms).map(r => ({
           _id: r._id,
           title: roomData?.title,
           name: r.name,
@@ -503,13 +508,13 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');
-      toast.success('Rooms added successfully!');
+      toast.success(isSingleRoom ? 'Room saved successfully!' : 'Rooms added successfully!');
       
       // Re-fetch rooms to ensure all rooms have _id from backend
       const fetchRes = await fetch(`/api/hotel/create?hotelId=${hotelId}`);
       const fetchData = await fetchRes.json();
       if (fetchRes.ok && fetchData.hotel && fetchData.hotel.rooms) {
-        setRooms(fetchData.hotel.rooms.map((r, index) => ({
+        const mappedRooms = fetchData.hotel.rooms.map((r, index) => ({
           id: r._id || Date.now() + index,
           _id: r._id,
           title: r.title || '',
@@ -520,7 +525,8 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
           paragraph: r.paragraph || '',
           mainPhoto: r.mainPhoto || null,
           relatedPhotos: r.relatedPhotos || []
-        })));
+        }));
+        setRooms(isSingleRoom ? mappedRooms.slice(0, 1) : mappedRooms);
       }
     } catch (err) {
       toast.error(err.message);
@@ -540,19 +546,22 @@ const CreateRoom = ({ hotelId, roomData, roomId }) => {
           handleChange={handleChange}
           handleRemoveRoom={handleRemoveRoom}
           toggleAmenity={toggleAmenity}
-          showRemoveButton={rooms.length > 1}
+          showRemoveButton={!isSingleRoom && rooms.length > 1}
+          isSingleRoom={isSingleRoom}
         />
       ))}
 
+      {isSingleRoom ? null : (
       <div className="flex justify-center">
         <Button type="button" variant="outline" className="w-full md:w-auto" onClick={handleAddRoom}>
           <Plus className="w-4 h-4 mr-2" /> Add Another Room
         </Button>
       </div>
+      )}
 
       <div className="pt-6 border-t border-border flex justify-end">
         <Button type="submit" disabled={loading} size="lg">
-          {loading ? "Saving..." : "Save All Rooms"}
+          {loading ? "Saving..." : isSingleRoom ? "Save Room" : "Save All Rooms"}
         </Button>
       </div>
     </form>

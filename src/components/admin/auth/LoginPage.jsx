@@ -70,7 +70,7 @@ function LeftPanel() {
       {/* Top content */}
       <motion.div variants={stagger} initial="hidden" animate="visible" className="relative z-10">
         <motion.p variants={fadeUp} className="font-ui text-[12px] font-semibold uppercase tracking-[0.25em] text-white">
-          ThapliyalHomeStay CMS
+          Thapliyal Home Stay CMS
         </motion.p>
 
         <motion.h1
@@ -120,11 +120,11 @@ function AdminLogo() {
         width={150}
         height={150}
         src="/logo.png"
-        alt="ThapliyalHomeStay Logo"
+        alt="Thapliyal Home Stay Logo"
         className="size-12 rounded-full object-cover"
       />
       <div>
-        <p className="font-heading text-base font-semibold text-heading">ThapliyalHomeStay</p>
+        <p className="font-heading text-base font-semibold text-heading">Thapliyal Home Stay</p>
         <p className="font-ui text-[10px] uppercase tracking-widest text-muted/60">Retreat CMS</p>
       </div>
     </div>
@@ -322,7 +322,7 @@ export function LoginPage() {
 
             {/* Version footer */}
             <p className="mt-8 text-center font-ui text-[11px] text-muted/35">
-              ThapliyalHomeStay CMS · v1.0
+              Thapliyal Home Stay CMS · v1.0
             </p>
           </div>
         </motion.div>

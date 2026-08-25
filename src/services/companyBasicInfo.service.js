@@ -30,6 +30,7 @@ function serializeCompanyBasicInfo(record) {
     contactNumbers: Array.isArray(record.contactNumbers)
       ? record.contactNumbers.filter(Boolean)
       : [],
+    whatsappNumber: record.whatsappNumber || "",
     mainLogo: serializeImage(record.mainLogo),
     footerLogo: serializeImage(record.footerLogo),
     mobileUiLogo: serializeImage(record.mobileUiLogo),

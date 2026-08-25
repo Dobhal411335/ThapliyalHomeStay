@@ -35,7 +35,7 @@ const OFFERS = [
   "Rafting",
   "Local Sightseeing",
   "Pickup Require",
-  "Dropp Off Require",
+  "Drop Off Require",
   "Bike On Rent",
   "Yoga Classes",
   "Spa & Massage",
@@ -102,7 +102,7 @@ function Stepper({ label, value, min = 1, onChange, error }) {
   );
 }
 
-const BookingDetails = ({ hotel, room, onClose }) => {
+const BookingDetails = ({ hotel, room, onClose, listingType = "hotel" }) => {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(INITIAL);
   const [errors, setErrors] = useState({});
@@ -112,7 +112,11 @@ const BookingDetails = ({ hotel, room, onClose }) => {
   const [showInvoice, setShowInvoice] = useState(false);
   const [bookingDate, setBookingDate] = useState(null);
 
-  const roomName = room?.name || room?.title || "Room";
+  const isSingleRoom =
+    listingType === "room" || hotel?.listingType === "room";
+  const enquiryListingType = isSingleRoom ? "room" : "hotel";
+  const roomName =
+    room?.name || room?.title || (isSingleRoom ? hotel?.title : "") || "Room";
   const roomImg = room?.mainPhoto?.url || " ";
   const roomCode = room?.code || "";
   const price = useMemo(() => fromPrice(room), [room]);
@@ -160,8 +164,9 @@ const BookingDetails = ({ hotel, room, onClose }) => {
 
   const booking = {
     ...form,
-    hotelName: hotel?.title || "Hotel",
-    hotel,
+    listingType: enquiryListingType,
+    hotelName: isSingleRoom ? "" : hotel?.title || "Hotel",
+    hotel: isSingleRoom ? null : hotel,
     roomName,
     room,
     numRoom: form.roomNo,
@@ -191,8 +196,9 @@ const BookingDetails = ({ hotel, room, onClose }) => {
           adult: Number(form.adult) || 0,
           infant: Number(form.infant) || 0,
           child: Number(form.child) || 0,
+          listingType: enquiryListingType,
           hotelId: hotel?._id,
-          hotelName: hotel?.title || "Hotel",
+          hotelName: isSingleRoom ? "" : hotel?.title || "Hotel",
           roomId: room?._id,
           roomName,
           estimatedAmount,

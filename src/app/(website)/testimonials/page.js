@@ -32,9 +32,9 @@ async function getTestimonials() {
 }
 
 export const metadata = {
-  title: "Testimonials | ThapliyalHomeStay",
+  title: "Testimonials | Thapliyal Home Stay",
   description:
-    "Stories from guests who found quiet, clarity, and peace at ThapliyalHomeStay.",
+    "Stories from guests who found quiet, clarity, and peace at Thapliyal Home Stay.",
 };
 
 export default async function TestimonialsPage() {

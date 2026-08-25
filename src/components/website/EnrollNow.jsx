@@ -26,7 +26,7 @@ const EnrollNow = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "ThapliyalHomeStay",
+          title: "Thapliyal Home Stay",
           url: window.location.href,
         });
       } catch (err) {

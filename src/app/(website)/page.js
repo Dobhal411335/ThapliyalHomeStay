@@ -36,9 +36,9 @@ export default function HomePage() {
       <HeroSection />
       <PhilosophySection />
       <AboutUsSection />
+      <RoomSection />
       <Banner />
       <RandomTourPackageSection />
-      <RoomSection />
       <RetreatsSection/>
       <CtaSection />
       <InstaBlog />

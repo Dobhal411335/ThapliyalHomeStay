@@ -14,8 +14,23 @@ function createEnquiryId() {
   return `RM-${stamp}-${rand}`;
 }
 
+function resolveListingType(enquiry) {
+  if (enquiry?.listingType === "room" || enquiry?.listingType === "hotel") {
+    return enquiry.listingType;
+  }
+  if (
+    enquiry?.hotelId &&
+    typeof enquiry.hotelId === "object" &&
+    enquiry.hotelId.listingType === "room"
+  ) {
+    return "room";
+  }
+  return "hotel";
+}
+
 function serializeEnquiry(enquiry) {
   if (!enquiry) return null;
+  const listingType = resolveListingType(enquiry);
   const hotelRef =
     enquiry.hotelId && typeof enquiry.hotelId === "object"
       ? {
@@ -23,6 +38,7 @@ function serializeEnquiry(enquiry) {
           title: enquiry.hotelId.title || "",
           slug: enquiry.hotelId.slug || "",
           code: enquiry.hotelId.code || "",
+          listingType: enquiry.hotelId.listingType || "",
         }
       : null;
   const roomRef =
@@ -30,6 +46,7 @@ function serializeEnquiry(enquiry) {
       ? {
           _id: enquiry.roomId._id?.toString?.() || String(enquiry.roomId._id || ""),
           title: enquiry.roomId.title || "",
+          name: enquiry.roomId.name || "",
           slug: enquiry.roomId.slug || "",
           code: enquiry.roomId.code || "",
         }
@@ -38,11 +55,13 @@ function serializeEnquiry(enquiry) {
   return {
     ...enquiry,
     _id: enquiry._id?.toString?.() || String(enquiry._id),
+    listingType,
     hotelId:
       hotelRef?._id ||
       enquiry.hotelId?.toString?.() ||
       String(enquiry.hotelId || ""),
     hotel: hotelRef,
+    hotelName: listingType === "room" ? "" : enquiry.hotelName || hotelRef?.title || "",
     roomId:
       roomRef?._id ||
       enquiry.roomId?.toString?.() ||
@@ -64,14 +83,14 @@ export async function GET() {
   try {
     await connectDB();
     const enquiries = await RoomEnquiry.find({})
-      .populate("hotelId", "title slug code")
-      .populate("roomId", "title slug code")
+      .populate("hotelId", "title slug code listingType")
+      .populate("roomId", "title name slug code")
       .sort({ createdAt: -1 })
       .lean();
 
     return json(
       true,
-      "Hotel enquiries fetched.",
+      "Room enquiries fetched.",
       enquiries.map(serializeEnquiry),
       200
     );
@@ -90,8 +109,10 @@ export async function POST(req) {
     await connectDB();
     const body = await req.json();
 
+    const listingType = body?.listingType === "room" ? "room" : "hotel";
     const hotelId = body?.hotelId;
-    const hotelName = String(body?.hotelName || "").trim();
+    const hotelName =
+      listingType === "room" ? "" : String(body?.hotelName || "").trim();
     const roomId = body?.roomId;
     const roomName = String(body?.roomName || "").trim();
     const firstName = String(body?.firstName || "").trim();
@@ -108,7 +129,10 @@ export async function POST(req) {
     const days = Number(body?.days);
     const adult = Number(body?.adult);
 
-    if (!hotelId || !hotelName) {
+    if (!hotelId) {
+      return json(false, "Listing information is required.", null, 400);
+    }
+    if (listingType === "hotel" && !hotelName) {
       return json(false, "Hotel information is required.", null, 400);
     }
     if (!roomId || !roomName) {
@@ -140,6 +164,7 @@ export async function POST(req) {
     }
 
     const enquiry = await RoomEnquiry.create({
+      listingType,
       hotelId,
       hotelName,
       roomId,

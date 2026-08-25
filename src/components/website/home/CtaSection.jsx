@@ -32,7 +32,7 @@ export function CtaSection() {
                 <ArrowUpRight className="size-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/gallery"
+                href="/plan-your-own"
                 className="inline-flex h-11 items-center rounded-[var(--radius-button)] border border-black px-7 font-body text-sm text-black transition-colors hover:border-heading/30 hover:bg-surface"
               >
                 See the pace

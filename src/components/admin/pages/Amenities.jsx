@@ -8,11 +8,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { getHotelAmenityIcon } from "@/lib/hotelAmenityIcons";
 
-export default function Amenities({ roomId }) {
+export default function Amenities({ roomId, mode = "hotel" }) {
   const [amenitiesList, setAmenitiesList] = useState([]);
   const [checked, setChecked] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const isSingleRoom = mode === "room";
 
   useEffect(() => {
     async function fetchAmenities() {
@@ -93,10 +94,12 @@ export default function Amenities({ roomId }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="font-heading text-xl font-medium text-heading">
-          Hotel amenities
+          {isSingleRoom ? "Room amenities" : "Hotel amenities"}
         </h2>
         <p className="mt-1 font-body text-sm text-muted">
-          Select the amenities available for this Hotel.
+          {isSingleRoom
+            ? "Select the amenities available for this room."
+            : "Select the amenities available for this Hotel."}
         </p>
       </div>
 

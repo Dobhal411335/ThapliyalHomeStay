@@ -13,7 +13,10 @@ function serializeData(data) {
 async function getHotelBySlug(slug) {
   try {
     await connectDB();
-    const hotel = await Hotel.findOne({ slug })
+    const hotel = await Hotel.findOne({
+      slug,
+      listingType: { $ne: "room" },
+    })
       .populate("rooms")
       .populate("amenities")
       .populate("prices")
