@@ -4,6 +4,7 @@ import "@/models/Admin/Room";
 import "@/models/Admin/RoomAmenities";
 import "@/models/Admin/RoomPrice";
 import RoomDetails from "@/components/website/room/RoomDetails.jsx";
+import { DetailPageEndSections } from "@/components/website/home/DetailPageEndSections";
 
 function serializeData(data) {
   if (!data) return null;
@@ -57,5 +58,10 @@ export default async function HotelPage({ params }) {
     );
   }
 
-  return <RoomDetails data={hotel} />;
+  return (
+    <>
+      <RoomDetails data={hotel} />
+      <DetailPageEndSections />
+    </>
+  );
 }

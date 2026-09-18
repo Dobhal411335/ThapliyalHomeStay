@@ -19,6 +19,7 @@ import ComingSoon from "@/models/Admin/ComingSoon"
 import CompanyBasicInfo from "@/models/Admin/CompanyBasicInfo"
 import ComingSoonEnquiryForm from "@/components/Package/ComingSoonEnquiries.jsx"
 import { serializePackage } from "@/lib/serializePackage"
+import { DetailPageEndSections } from "@/components/website/home/DetailPageEndSections"
 
 const getPackageBySlug = async (slug) => {
     try {
@@ -181,6 +182,7 @@ const PackageDetailsPage = async ({ params }) => {
 
     if (isComingSoon) {
         return (
+            <>
             <div className="min-h-screen mb-20 font-barlow">
                 <div className="relative h-30 md:h-75 w-full overflow-hidden bg-gray-300 flex items-center justify-center">
                     {packageDetails.bannerUrl ? (
@@ -288,18 +290,23 @@ const PackageDetailsPage = async ({ params }) => {
                     <ComingSoonEnquiryForm packageId={packageDetails._id?.toString()} />
                 </div>
             </div>
+            <DetailPageEndSections />
+        </>
         )
     }
 
     return (
-        <PackageDetailClient
-            packageDetails={packageDetails}
-            reviews={reviews}
-            packages={packages}
-            featuredPackages={JSON.parse(JSON.stringify(featuredPackages || []))}
-            avgRating={avgRating}
-            formatNumericStr={formatNumeric.toString()}
-        />
+        <>
+            <PackageDetailClient
+                packageDetails={packageDetails}
+                reviews={reviews}
+                packages={packages}
+                featuredPackages={JSON.parse(JSON.stringify(featuredPackages || []))}
+                avgRating={avgRating}
+                formatNumericStr={formatNumeric.toString()}
+            />
+            <DetailPageEndSections />
+        </>
     )
 }
 

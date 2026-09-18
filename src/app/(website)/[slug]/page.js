@@ -1,14 +1,62 @@
+import connectDB from "@/lib/connectDB";
+import Webpage from "@/models/Admin/Webpage";
 import WebPage from "@/components/website/webpage/WebPage";
+import { getCompanyBasicInfo } from "@/services/companyBasicInfo.service";
+
+function serializeData(data) {
+  if (!data) return null;
+  return JSON.parse(JSON.stringify(data));
+}
+
+function stripText(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildWebpageDescription(webpage) {
+  const candidates = [
+    webpage?.firstTitle,
+    webpage?.secondTitle,
+    webpage?.design5MainHeading,
+    webpage?.design6MainHeading,
+    webpage?.design6SubHeading,
+    webpage?.design7MainHeading,
+    webpage?.design8Description,
+    webpage?.design9Description,
+    webpage?.blockquoteDescription,
+    webpage?.paragraphSections?.[0]?.description,
+    webpage?.paragraphSections?.[0]?.title,
+  ];
+
+  for (const candidate of candidates) {
+    const text = stripText(candidate);
+    if (text) return text.slice(0, 160);
+  }
+
+  return "";
+}
+
+function getWebpageOgImage(webpage, company) {
+  return (
+    webpage?.bannerImage?.url ||
+    webpage?.imageFirst?.url ||
+    webpage?.bannerImageMobile?.url ||
+    webpage?.imageFirstMobile?.url ||
+    company?.mainLogo?.url ||
+    ""
+  );
+}
 
 async function getWebpageBySlug(slug) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/create_webpage/by_slug/${encodeURIComponent(slug)}`,
-      { next: { revalidate: 60 } }
-    );
-    const data = await res.json();
-    if (!data || data.error) return null;
-    return data;
+    await connectDB();
+    const webpage = await Webpage.findOne({
+      slug: decodeURIComponent(slug).toLowerCase(),
+      active: true,
+    }).lean();
+    return serializeData(webpage);
   } catch (error) {
     console.error("Failed to fetch webpage:", error);
     return null;
@@ -18,18 +66,39 @@ async function getWebpageBySlug(slug) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const webpage = await getWebpageBySlug(slug);
+  const company = await getCompanyBasicInfo();
 
   if (!webpage) {
     return { title: "Page" };
   }
 
+  const title = webpage.titleLine || webpage.title || "Page";
+  const description = buildWebpageDescription(webpage);
   const keywords = Array.isArray(webpage.keywords)
     ? webpage.keywords.filter(Boolean)
     : [];
+  const ogImage = getWebpageOgImage(webpage, company);
+  const siteName = company?.companyName || "";
+  const pageUrl = `/${webpage.slug || slug}`;
 
   return {
-    title: webpage.titleLine || webpage.title || "Page",
+    title,
+    description,
     ...(keywords.length > 0 ? { keywords } : {}),
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName,
+      type: "website",
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 

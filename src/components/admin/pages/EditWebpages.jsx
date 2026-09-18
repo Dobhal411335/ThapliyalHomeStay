@@ -153,9 +153,18 @@ const InlineRichTextEditor = ({ value, onChange }) => {
   );
 };
 
-const BannerImageField = ({ value, uploading, onChange, onDelete, inputId }) => (
+const BannerImageField = ({
+  value,
+  uploading,
+  onChange,
+  onDelete,
+  inputId,
+  label = "Header Banner Image",
+  hint = "Recommended size: 1200x400 px",
+  buttonLabel = "Choose Banner Image",
+}) => (
   <div className="space-y-2">
-    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Header Banner Image</label>
+    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
     <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/30 flex flex-col items-center justify-center text-center">
       <input
         type="file"
@@ -171,9 +180,9 @@ const BannerImageField = ({ value, uploading, onChange, onDelete, inputId }) => 
         htmlFor={inputId}
         className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors mb-1"
       >
-        Choose Banner Image
+        {buttonLabel}
       </label>
-      <p className="text-[11px] text-slate-400">Recommended size: 1200x400 px</p>
+      <p className="text-[11px] text-slate-400">{hint}</p>
       {uploading && <div className="text-blue-600 text-xs font-semibold mt-2 animate-pulse">Uploading to Cloudinary...</div>}
       {value?.url && (
         <div className="relative w-full max-w-md h-44 border border-slate-200/80 rounded-xl overflow-hidden mt-4 bg-white shadow-sm">
@@ -195,7 +204,9 @@ const BannerImageField = ({ value, uploading, onChange, onDelete, inputId }) => 
 const EditWebpages = ({ activityId }) => {
   const router = useRouter();
   const imageFirstInputRef = useRef(null);
+  const imageFirstMobileInputRef = useRef(null);
   const bannerImageInputRef = useRef(null);
+  const bannerImageMobileInputRef = useRef(null);
 
   // Loading and error state
   const [loading, setLoading] = useState(true);
@@ -219,10 +230,14 @@ const EditWebpages = ({ activityId }) => {
               ? data.keywords.filter(Boolean)
               : [''],
             imageFirst: data.imageFirst || { url: '', key: '' },
+            imageFirstMobile: data.imageFirstMobile || { url: '', key: '' },
             bannerImage: data.bannerImage || { url: '', key: '' },
+            bannerImageMobile: data.bannerImageMobile || { url: '', key: '' },
             mainProfileImage: data.mainProfileImage || { url: '', key: '' },
             paragraphFirstImage: data.paragraphFirstImage || { url: '', key: '' },
             paragraphSecondImage: data.paragraphSecondImage || { url: '', key: '' },
+            advertisementImage: data.advertisementImage || { url: '', key: '' },
+            advertisementUrl: data.advertisementUrl || '',
             advertisements: Array.isArray(data.advertisements) && data.advertisements.length > 0
               ? data.advertisements
               : (data.advertisementImage?.url || data.advertisementUrl)
@@ -276,7 +291,9 @@ const EditWebpages = ({ activityId }) => {
   }, [activityId]);
 
   const [uploadingImageFirst, setUploadingImageFirst] = useState(false);
+  const [uploadingImageFirstMobile, setUploadingImageFirstMobile] = useState(false);
   const [uploadingBannerImage, setUploadingBannerImage] = useState(false);
+  const [uploadingBannerImageMobile, setUploadingBannerImageMobile] = useState(false);
   const galleryInputRef = useRef(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const mainProfileImageInputRef = useRef(null);
@@ -292,7 +309,9 @@ const EditWebpages = ({ activityId }) => {
     const file = e.target.files[0];
     if (!file) return;
     if (key === 'imageFirst') setUploadingImageFirst(true);
+    if (key === 'imageFirstMobile') setUploadingImageFirstMobile(true);
     if (key === 'bannerImage') setUploadingBannerImage(true);
+    if (key === 'bannerImageMobile') setUploadingBannerImageMobile(true);
     if (key === 'mainProfileImage') setUploadingMainProfileImage(true);
     if (key === 'sideThumbImage') setUploadingSideThumbImage(true);
     if (key === 'paragraphFirstImage') setUploadingParagraphFirstImage(true);
@@ -327,7 +346,9 @@ const EditWebpages = ({ activityId }) => {
       toast.error('Cloudinary upload error: ' + err.message);
     }
     if (key === 'imageFirst') setUploadingImageFirst(false);
+    if (key === 'imageFirstMobile') setUploadingImageFirstMobile(false);
     if (key === 'bannerImage') setUploadingBannerImage(false);
+    if (key === 'bannerImageMobile') setUploadingBannerImageMobile(false);
     if (key === 'mainProfileImage') setUploadingMainProfileImage(false);
     if (key === 'sideThumbImage') setUploadingSideThumbImage(false);
     if (key === 'paragraphFirstImage') setUploadingParagraphFirstImage(false);
@@ -634,7 +655,9 @@ const EditWebpages = ({ activityId }) => {
     templateType: 'design1',
     firstTitle: '',
     imageFirst: { url: '', key: '' },
+    imageFirstMobile: { url: '', key: '' },
     bannerImage: { url: '', key: '' },
+    bannerImageMobile: { url: '', key: '' },
     secondTitle: '',
     createTags: initialCreateTags,
     postedBy: { admin: false, user: false },
@@ -648,6 +671,8 @@ const EditWebpages = ({ activityId }) => {
     blockquoteTags: initialCreateTags,
     accordionTags: initialAccordionTags,
     advertisements: initialAdvertisements,
+    advertisementImage: { url: '', key: '' },
+    advertisementUrl: '',
     sideThumbImage: '',
     sideThumbImageKey: '',
     sideThumbName: '',
@@ -828,11 +853,13 @@ const EditWebpages = ({ activityId }) => {
       hasNonEmptyText(data?.secondTitle) ||
       hasAnyNonEmptyTag(data?.createTags) ||
       hasPostedBySelection(data?.postedBy) ||
-      !!data?.imageFirst?.url
+      !!data?.imageFirst?.url ||
+      !!data?.imageFirstMobile?.url
     );
   };
 
-  const hasTopBannerContent = (data) => !!data?.bannerImage?.url;
+  const hasTopBannerContent = (data) =>
+    !!data?.bannerImage?.url || !!data?.bannerImageMobile?.url;
   
   const handleParagraphSectionImageChange = async (e, index, imageKey) => {
     const file = e.target.files?.[0];
@@ -971,10 +998,14 @@ const EditWebpages = ({ activityId }) => {
                   ? data.keywords.filter(Boolean)
                   : [''],
                 imageFirst: data.imageFirst || { url: '', key: '' },
+                imageFirstMobile: data.imageFirstMobile || { url: '', key: '' },
                 bannerImage: data.bannerImage || { url: '', key: '' },
+                bannerImageMobile: data.bannerImageMobile || { url: '', key: '' },
                 mainProfileImage: data.mainProfileImage || { url: '', key: '' },
                 paragraphFirstImage: data.paragraphFirstImage || { url: '', key: '' },
                 paragraphSecondImage: data.paragraphSecondImage || { url: '', key: '' },
+                advertisementImage: data.advertisementImage || { url: '', key: '' },
+                advertisementUrl: data.advertisementUrl || '',
                 advertisements: Array.isArray(data.advertisements) && data.advertisements.length > 0
                   ? data.advertisements
                   : (data.advertisementImage?.url || data.advertisementUrl)
@@ -1149,7 +1180,7 @@ const EditWebpages = ({ activityId }) => {
               {/* Top Image (Design 3 has its own setup) */}
               {(topSectionView === 'all' || isDesignFour || isDesignFive || isDesignSix || isDesignSeven) && !isDesignThree && (
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Image</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Image (Laptop)</label>
                   <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/30 flex flex-col items-center justify-center text-center">
                     <input
                       type="file"
@@ -1193,10 +1224,56 @@ const EditWebpages = ({ activityId }) => {
                 </div>
               )}
 
+              {(topSectionView === 'all' || isDesignFour || isDesignFive || isDesignSix || isDesignSeven) && !isDesignThree && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Image (Mobile)</label>
+                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/30 flex flex-col items-center justify-center text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleCloudinaryImageChange(e, 'imageFirstMobile')}
+                      ref={imageFirstMobileInputRef}
+                      className="hidden"
+                      id="main-top-image-mobile-input"
+                    />
+                    <div className="mb-3 rounded-full bg-slate-100 p-2.5 text-slate-600 border border-slate-200/50">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <label
+                      htmlFor="main-top-image-mobile-input"
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors mb-1"
+                    >
+                      Choose Mobile Image
+                    </label>
+                    <p className="text-[11px] text-slate-400">Recommended size: 800x1000 px</p>
+
+                    {uploadingImageFirstMobile && <div className="text-blue-600 text-xs font-semibold mt-2 animate-pulse">Uploading to Cloudinary...</div>}
+
+                    {form.imageFirstMobile && form.imageFirstMobile.url && (
+                      <div className="relative w-full max-w-sm h-48 border border-slate-200/80 rounded-xl overflow-hidden mt-4 bg-white shadow-sm">
+                        <img
+                          src={form.imageFirstMobile.url}
+                          alt="Main Top Mobile Image Preview"
+                          className="object-cover w-full h-full"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCloudinaryImage('imageFirstMobile')}
+                          className="absolute top-2 right-2 bg-white/95 hover:bg-rose-50 border border-slate-200 text-rose-600 rounded-lg p-2 transition-colors shadow-sm"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Main Banner Image Option */}
               {(topSectionView === 'bannerOnly' && !isDesignFour && !isCustomTemplate) && (
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Banner Image</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Banner Image (Laptop)</label>
                   <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/30 flex flex-col items-center justify-center text-center">
                     <input
                       type="file"
@@ -1229,6 +1306,52 @@ const EditWebpages = ({ activityId }) => {
                         <button
                           type="button"
                           onClick={() => handleDeleteCloudinaryImage('bannerImage')}
+                          className="absolute top-2 right-2 bg-white/95 hover:bg-rose-50 border border-slate-200 text-rose-600 rounded-lg p-2 transition-colors shadow-sm"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(topSectionView === 'bannerOnly' && !isDesignFour && !isCustomTemplate) && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Main Top Banner Image (Mobile)</label>
+                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/30 flex flex-col items-center justify-center text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => handleCloudinaryImageChange(e, 'bannerImageMobile')}
+                      ref={bannerImageMobileInputRef}
+                      className="hidden"
+                      id="banner-image-mobile-input"
+                    />
+                    <div className="mb-3 rounded-full bg-slate-100 p-2.5 text-slate-600 border border-slate-200/50">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <label
+                      htmlFor="banner-image-mobile-input"
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors mb-1"
+                    >
+                      Choose Mobile Banner Image
+                    </label>
+                    <p className="text-[11px] text-slate-400">Recommended size: 800x1000 px</p>
+
+                    {uploadingBannerImageMobile && <div className="text-blue-600 text-xs font-semibold mt-2 animate-pulse">Uploading to Cloudinary...</div>}
+
+                    {form.bannerImageMobile && form.bannerImageMobile.url && (
+                      <div className="relative w-full max-w-md h-44 border border-slate-200/80 rounded-xl overflow-hidden mt-4 bg-white shadow-sm">
+                        <img
+                          src={form.bannerImageMobile.url}
+                          alt="Mobile Banner Preview"
+                          className="object-cover w-full h-full"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCloudinaryImage('bannerImageMobile')}
                           className="absolute top-2 right-2 bg-white/95 hover:bg-rose-50 border border-slate-200 text-rose-600 rounded-lg p-2 transition-colors shadow-sm"
                           title="Remove image"
                         >
@@ -2919,6 +3042,18 @@ const EditWebpages = ({ activityId }) => {
               onChange={(e) => handleCloudinaryImageChange(e, 'bannerImage')}
               onDelete={() => handleDeleteCloudinaryImage('bannerImage')}
               inputId="design8-banner-image-input"
+              label="Header Banner Image (Laptop)"
+            />
+
+            <BannerImageField
+              value={form.bannerImageMobile}
+              uploading={uploadingBannerImageMobile}
+              onChange={(e) => handleCloudinaryImageChange(e, 'bannerImageMobile')}
+              onDelete={() => handleDeleteCloudinaryImage('bannerImageMobile')}
+              inputId="design8-banner-image-mobile-input"
+              label="Header Banner Image (Mobile)"
+              hint="Recommended size: 800x1000 px"
+              buttonLabel="Choose Mobile Banner Image"
             />
 
             <div className="space-y-1.5">
@@ -3038,6 +3173,18 @@ const EditWebpages = ({ activityId }) => {
               onChange={(e) => handleCloudinaryImageChange(e, 'bannerImage')}
               onDelete={() => handleDeleteCloudinaryImage('bannerImage')}
               inputId="design9-banner-image-input"
+              label="Header Banner Image (Laptop)"
+            />
+
+            <BannerImageField
+              value={form.bannerImageMobile}
+              uploading={uploadingBannerImageMobile}
+              onChange={(e) => handleCloudinaryImageChange(e, 'bannerImageMobile')}
+              onDelete={() => handleDeleteCloudinaryImage('bannerImageMobile')}
+              inputId="design9-banner-image-mobile-input"
+              label="Header Banner Image (Mobile)"
+              hint="Recommended size: 800x1000 px"
+              buttonLabel="Choose Mobile Banner Image"
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

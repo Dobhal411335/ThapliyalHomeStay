@@ -15,27 +15,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { PromotionalBannersSection } from "@/components/website/home/PromotionalBannersSection";
 
-const DESC_WORD_LIMIT = 55;
-
-function truncateHtmlByWords(html = "", wordLimit = DESC_WORD_LIMIT) {
-  const raw = String(html || "").trim();
-  if (!raw) return "";
-
-  const text = raw
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<\/(p|div|li|h[1-6])>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const words = text.split(" ").filter(Boolean);
-  if (words.length === 0) return "";
-  if (words.length <= wordLimit) return raw;
-
-  return `${words.slice(0, wordLimit).join(" ")}…`;
-}
 
 export default function RandomTourPackageSection() {
   const [packages, setPackages] = useState([]);
@@ -45,20 +26,8 @@ export default function RandomTourPackageSection() {
   const [consultancyBanner, setConsultancyBanner] = useState([]);
   const [consultancyLoading, setConsultancyLoading] = useState(true);
   const [featuredPackages, setFeaturedPackages] = useState([]);
-  const [promotionalBanners, setPromotionalBanners] = useState([]);
-  const [promoLoading, setPromoLoading] = useState(true);
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const res = await fetch("/api/getRandomPackages");
-        const data = await res.json();
-        setPackages(data.packages?.length ? data.packages : []);
-      } catch {
-        setPackages([]);
-      } finally {
-        setPackagesLoading(false);
-      }
-    };
+
     const fetchFeaturedPackages = async () => {
       try {
         const response = await fetch("/api/featured-packages");
@@ -68,17 +37,6 @@ export default function RandomTourPackageSection() {
         setFeaturedPackages([]);
       } finally {
         setPackagesLoading(false);
-      }
-    };
-    const fetchPromotional = async () => {
-      try {
-        const res = await fetch("/api/addPromotinalBanner");
-        const data = await res.json();
-        setPromotionalBanners(Array.isArray(data) ? data : []);
-      } catch {
-        setPromotionalBanners([]);
-      } finally {
-        setPromoLoading(false);
       }
     };
     const fetchBanners = async () => {
@@ -104,203 +62,79 @@ export default function RandomTourPackageSection() {
         setConsultancyLoading(false);
       }
     };
-
-    fetchPackages();
     fetchBanners();
     fetchConsultancy();
     fetchFeaturedPackages();
-    fetchPromotional();
   }, []);
 
-  const formatNumeric = (num) => new Intl.NumberFormat("en-IN").format(num);
 
   const showBanners = bannersLoading || bannerSection3rd.length > 0;
-  const showPackages = packagesLoading || packages.length > 0;
   const showConsultancy = consultancyLoading || consultancyBanner.length > 0;
   const showFeaturedPackages = packagesLoading || featuredPackages.length > 0;
-  const showPromo = promoLoading || promotionalBanners.length > 0;
 
   return (
     <>
-      {showPackages && (
-        <Section spacing="sm" className="bg-background overflow-hidden">
-          <Container>
-            <div className="mb-12">
-              <p className="font-ui text-xs uppercase tracking-[0.25em] text-muted">
-                Journeys
-              </p>
-              <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
-                You Will
-                <em className="italic text-primary"> Experience</em>.
-              </h2>
-              <p className="mt-5 font-body text-base leading-[1.9] text-foreground">
-                Experience the joyful spirit of Rishikesh through yoga,
-                meditation, and soulful adventures. Witness the sacred Ganga
-                Aarti, explore waterfalls on refreshing hikes, connect with
-                nature, meditate beside the Ganga, and immerse yourself in
-                healing sound vibrations. A beautiful journey of movement,
-                connection, inner peace, and unforgettable moments.
-              </p>
-            </div>
-
-            {packagesLoading ? (
-              <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col rounded-card border border-border bg-white p-6 md:p-8"
-                  >
-                    <Skeleton className="mb-6 aspect-[4/3] w-full rounded-[var(--radius-image)]" />
-                    <div className="flex items-start justify-between">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-8" />
-                    </div>
-                    <Skeleton className="mt-4 h-8 w-3/4" />
-                    <Skeleton className="mt-2 h-4 w-1/2" />
-                    <div className="mt-6 border-t border-border pt-6">
-                      <Skeleton className="h-10 w-32" />
-                    </div>
-                    <Skeleton className="mt-8 h-10 w-full rounded-button" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-14 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {packages.map((item) => {
-                  const descriptionHtml = truncateHtmlByWords(
-                    item?.basicDetails?.smallDesc ||
-                    item?.basicDetails?.fullDesc ||
-                    "",
-                  );
-                  const price = Number(item?.price);
-
-                  return (
-                    <article
-                      key={item._id || item.slug}
-                      className="group flex h-full flex-col rounded-card border border-border bg-white p-6"
-                    >
-                      <div className="relative mb-6 aspect-[4/3] w-full shrink-0 overflow-hidden rounded-image bg-border">
-                        <Image
-                          src={
-                            item?.basicDetails?.thumbnail?.url ||
-                            "/placeholder.png"
-                          }
-                          alt={item?.packageName || "Tour package"}
-                          fill
-                          sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
-                          quality={60}
-                          className="object-cover object-center transition-transform duration-(--duration-slow) ease-(--ease-smooth) group-hover:scale-[1.03]"
-                        />
-                      </div>
-
-                      <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="font-sans text-[12px] uppercase tracking-[0.2em] text-black">
-                            {item?.basicDetails?.duration
-                              ? `${item.basicDetails.duration} Days`
-                              : "Flexible"}
-                          </span>
-                          {Number.isFinite(price) ? (
-                            <span className="shrink-0 font-heading text-lg font-medium text-heading">
-                              {price === 0
-                                ? "On enquiry"
-                                : `₹${formatNumeric(price)}*`}
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <h3 className="mt-2 font-sans text-xl text-black line-clamp-2">
-                          {item.packageName}
-                        </h3>
-                        {item?.basicDetails?.location ? (
-                          <p className="mt-1 flex items-center gap-1.5 font-body text-md italic text-black">
-                            <MapPin className="size-3.5 shrink-0" />
-                            {item.basicDetails.location}
-                          </p>
-                        ) : null}
-
-                        {descriptionHtml ? (
-                          <div
-                            className="mt-3 line-clamp-4 font-body text-sm leading-relaxed text-muted [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0"
-                            dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-                          />
-                        ) : null}
-
-                        <div className="mt-auto pt-8">
-                          <Link
-                            href={`/package/${item.slug}`}
-                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-button border border-gray-400 bg-foreground/10 px-5 font-body text-sm text-black transition-colors hover:border-heading/40 hover:bg-foreground hover:text-white"
-                          >
-                            View Details
-                            <ArrowUpRight className="size-4" aria-hidden="true" />
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </Container>
-        </Section>
-      )}
-      {showPromo && (
-        <Section spacing="sm" className="bg-background w-full">
-          <div className="mx-auto w-full max-w-[2000px] px-2 md:px-8 lg:px-12">
-            <div className="mx-auto mb-12 max-w-2xl text-center">
-              <p className="font-ui text-xs uppercase tracking-[0.25em] text-gray-600">
-                Discover
-              </p>
-              <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
-                Quiet invitations to{" "}
-                <em className="italic text-primary">pause</em>.
-              </h2>
-              <p className="mx-auto mt-5 max-w-lg font-body text-base leading-[1.9] text-foreground">
-                A few curated openings — for the days you want stillness,
-                soft light, and nothing asking more of you than presence.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:gap-8 w-full">
-              {promoLoading
-                ? Array.from({ length: 2 }).map((_, idx) => (
-                  <Skeleton
-                    key={idx}
-                    className="w-full aspect-[16/9] rounded-md md:rounded-image"
-                  />
-                ))
-                : promotionalBanners.map((item) => (
-                  <Link
-                    key={item._id || item.title}
-                    href={item.buttonLink || "#"}
-                    target={item.buttonLink ? "_blank" : undefined}
-                    rel={item.buttonLink ? "noopener noreferrer" : undefined}
-                    className="group relative block w-full aspect-[16/9] overflow-hidden rounded-image bg-border"
-                  >
-                    {item.image?.url ? (
-                      <img
-                        src={item.image.url}
-                        alt={item.title || "Promotional banner"}
-                        className="block w-full h-full object-fill transition-transform duration-slow ease-smooth group-hover:scale-[1.03]"
-                      />
-                    ) : null}
-                    <div className="absolute inset-0 flex items-end bg-image-dark/40 opacity-0 transition-opacity duration-[var(--duration-medium)] group-hover:opacity-100">
-                      <span className="m-6 inline-flex items-center gap-1.5 font-ui text-xs uppercase tracking-[0.2em] text-white">
-                        Explore
-                        <ArrowUpRight
-                          className="size-3.5"
-                          aria-hidden="true"
-                        />
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          </div>
-        </Section>
-      )}
+ 
+      <PromotionalBannersSection />
+ 
+       {showFeaturedPackages && (
+         <Section spacing="sm" className="bg-white">
+           <Container>
+             <div className="mb-12 max-w-xl">
+               <p className="font-ui text-xs uppercase tracking-[0.25em] text-muted">
+                 Featured
+               </p>
+               <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
+                 Experiences worth{" "}
+                 <em className="italic text-primary">lingering</em> over.
+               </h2>
+             </div>
+ 
+             <div className="grid grid-cols-2 gap-5 md:gap-8 lg:grid-cols-4">
+               {packagesLoading
+                 ? Array.from({ length: 4 }).map((_, idx) => (
+                   <div key={idx} className="flex flex-col gap-4">
+                     <Skeleton className="md:aspect-4/5 aspect-3/4 w-full md:rounded-image rounded-md" />
+                     <Skeleton className="h-6 w-3/4" />
+                   </div>
+                 ))
+                 : featuredPackages.map((item) => (
+                   <Link
+                     key={item._id}
+                     href={item.link || "#"}
+                     className="group flex flex-col gap-4"
+                   >
+                     <div className="relative md:aspect-4/5 aspect-3/4 w-full overflow-hidden md:rounded-image rounded-md bg-border">
+                       {item.image?.url ? (
+                         <Image
+                           src={item.image.url}
+                           alt={item.title || "Featured experience"}
+                           fill
+                           sizes="(max-width: 768px) 50vw, 25vw"
+                           className="object-cover transition-transform duration-300 ease-smooth group-hover:scale-[1.03]"
+                         />
+                       ) : null}
+                       <div className="absolute inset-0 flex items-end bg-image-dark/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                         <span className="m-5 inline-flex items-center gap-1.5 font-ui text-xs uppercase tracking-[0.2em] text-white">
+                           View
+                           <ArrowUpRight
+                             className="size-3.5"
+                             aria-hidden="true"
+                           />
+                         </span>
+                       </div>
+                     </div>
+                     <h3 className="font-heading text-xl leading-snug text-heading transition-colors duration-300 group-hover:text-black">
+                       {item.title}
+                     </h3>
+                   </Link>
+                 ))}
+             </div>
+           </Container>
+         </Section>
+       )}
       {showBanners && (
-        <section className="w-full bg-background">
+        <section className="w-full bg-background mb-5">
           {bannersLoading ? (
             <Skeleton className="h-[400px] px-2 w-full rounded-none md:h-[430px]" />
           ) : (
@@ -324,7 +158,7 @@ export default function RandomTourPackageSection() {
                       />
                     ) : null}
                   </div>
-                  <div className="relative h-[500px] w-full md:hidden">
+                  <div className="relative h-[350px] w-full md:hidden">
                     {item.mobileImage?.url || item.image?.url ? (
                       <Image
                         src={item.mobileImage?.url || item.image.url}
@@ -340,63 +174,6 @@ export default function RandomTourPackageSection() {
             </div>
           )}
         </section>
-      )}
-
-      {showFeaturedPackages && (
-        <Section spacing="sm" className="bg-background">
-          <Container>
-            <div className="mb-12 max-w-xl">
-              <p className="font-ui text-xs uppercase tracking-[0.25em] text-muted">
-                Featured
-              </p>
-              <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
-                Experiences worth{" "}
-                <em className="italic text-primary">lingering</em> over.
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 gap-5 md:gap-8 lg:grid-cols-4">
-              {packagesLoading
-                ? Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="flex flex-col gap-4">
-                    <Skeleton className="md:aspect-4/5 aspect-3/4 w-full md:rounded-image rounded-md" />
-                    <Skeleton className="h-6 w-3/4" />
-                  </div>
-                ))
-                : featuredPackages.map((item) => (
-                  <Link
-                    key={item._id}
-                    href={item.link || "#"}
-                    className="group flex flex-col gap-4"
-                  >
-                    <div className="relative md:aspect-4/5 aspect-3/4 w-full overflow-hidden md:rounded-image rounded-md bg-border">
-                      {item.image?.url ? (
-                        <Image
-                          src={item.image.url}
-                          alt={item.title || "Featured experience"}
-                          fill
-                          sizes="(max-width: 768px) 50vw, 25vw"
-                          className="object-cover transition-transform duration-300 ease-smooth group-hover:scale-[1.03]"
-                        />
-                      ) : null}
-                      <div className="absolute inset-0 flex items-end bg-image-dark/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                        <span className="m-5 inline-flex items-center gap-1.5 font-ui text-xs uppercase tracking-[0.2em] text-white">
-                          View
-                          <ArrowUpRight
-                            className="size-3.5"
-                            aria-hidden="true"
-                          />
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="font-heading text-xl leading-snug text-heading transition-colors duration-300 group-hover:text-primary md:text-2xl">
-                      {item.title}
-                    </h3>
-                  </Link>
-                ))}
-            </div>
-          </Container>
-        </Section>
       )}
 
       {showConsultancy && (

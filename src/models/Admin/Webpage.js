@@ -137,7 +137,9 @@ const WebpageSchema = new Schema(
     },
     firstTitle: { type: String, default: "" },
     imageFirst: { type: ImageSchema, default: () => ({}) },
+    imageFirstMobile: { type: ImageSchema, default: () => ({}) },
     bannerImage: { type: ImageSchema, default: () => ({}) },
+    bannerImageMobile: { type: ImageSchema, default: () => ({}) },
     secondTitle: { type: String, default: "" },
     createTags: { type: [String], default: [""] },
     postedBy: {
@@ -159,6 +161,8 @@ const WebpageSchema = new Schema(
     blockquoteTags: { type: [String], default: [""] },
     accordionTags: { type: [AccordionTagSchema], default: [{ left: "", right: "" }] },
     advertisements: { type: [AdvertisementSchema], default: [] },
+    advertisementImage: { type: ImageSchema, default: () => ({}) },
+    advertisementUrl: { type: String, default: "" },
     sideThumbImage: { type: ImageSchema, default: () => ({}) },
     sideThumbName: { type: String, default: "" },
     sideThumbDesignation: { type: String, default: "" },

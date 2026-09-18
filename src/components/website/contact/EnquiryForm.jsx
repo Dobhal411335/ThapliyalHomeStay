@@ -239,25 +239,6 @@ export function EnquiryForm() {
           {/* Row 3 — Plan of interest + Start date */}
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <FieldLabel htmlFor="c-plan" optional>Plan of interest</FieldLabel>
-              <Controller
-                name="plan"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger id="c-plan" className="mt-1.5 w-full">
-                      <SelectValue placeholder="Choose a retreat" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {planOptions.map((o) => (
-                        <SelectItem key={o} value={o}>{o}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div>
               <FieldLabel htmlFor="c-date" optional>Preferred start date</FieldLabel>
               <div className="mt-1.5">
                 <Controller

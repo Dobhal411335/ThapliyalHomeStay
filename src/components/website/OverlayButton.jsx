@@ -14,7 +14,7 @@ const OverlayButton = () => {
             call: "+917088813489", // Call phone number
             whatsapp: "+917088813489", // WhatsApp number
             call_to_action: "Thapliyal Homestay", // Call to action
-            button_color: "#FF6550", // Color of button
+            button_color: "#78874f", // Color of button
             position: "right", // Position may be 'right' or 'left'
             order: "call,whatsapp", // Order of buttons
             pre_filled_message: "Dear Team Thapliyal Homestay Greetings We are interested in visiting Rishikesh in the coming days and would like to check your Retreats availability. Could you please share your current availability, along with the best available offers, seasonal packages, or group rates for our dates? Providing these details at your earliest convenience will help us finalize our travel plans smoothly. Looking forward to your prompt response.", // WhatsApp pre-filled message

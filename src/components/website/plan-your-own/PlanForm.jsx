@@ -337,24 +337,6 @@ export function PlanForm() {
                     )}
                   />
                 </div>
-                <div>
-                  <FieldLabel htmlFor="dietary" optional>Dietary notes</FieldLabel>
-                  <Input
-                    id="dietary"
-                    placeholder="e.g. vegan, gluten-free"
-                    className="mt-2"
-                    {...register("dietary")}
-                  />
-                </div>
-                <div>
-                  <FieldLabel htmlFor="budget" optional>Budget / person</FieldLabel>
-                  <Input
-                    id="budget"
-                    placeholder="Optional"
-                    className="mt-2"
-                    {...register("budget")}
-                  />
-                </div>
               </div>
 
               {/* Row 6 — Hopes textarea */}

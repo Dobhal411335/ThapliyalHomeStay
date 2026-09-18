@@ -2,23 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getHotelAmenityIcon } from "@/lib/hotelAmenityIcons";
+  BedDouble,
+  ChevronRight,
+  Users,
+} from "lucide-react";
 
-function truncateHtmlByWords(html = "", wordLimit = 55) {
+function truncateHtmlByWords(html = "", wordLimit = 28) {
   const raw = String(html || "").trim();
   if (!raw) return "";
 
@@ -32,7 +22,7 @@ function truncateHtmlByWords(html = "", wordLimit = 55) {
 
   const words = text.split(" ").filter(Boolean);
   if (words.length === 0) return "";
-  if (words.length <= wordLimit) return raw;
+  if (words.length <= wordLimit) return text;
 
   return `${words.slice(0, wordLimit).join(" ")}…`;
 }
@@ -60,21 +50,38 @@ function getRoomCardData(item) {
     nested?.doubleOccupancyPrice ??
     priceRows.find((p) => p.type === "02 Pax")?.amount;
 
+  const fromPrice =
+    [singlePrice, doublePrice]
+      .filter((value) => value != null && value !== "" && Number(value) > 0)
+      .map(Number)
+      .sort((a, b) => a - b)[0] ?? null;
+
+  const personCount = doublePrice != null ? 2 : singlePrice != null ? 1 : null;
+  const hasExtraBed = priceRows.some((p) => p.type === "Extra Bed");
+
+  const features = [];
+  if (personCount != null) {
+    features.push({
+      icon: Users,
+      label: `${personCount} ${personCount === 1 ? "Person" : "Persons"}`,
+    });
+  }
+  if (hasExtraBed) {
+    features.push({
+      icon: BedDouble,
+      label: "Extra Bed",
+    });
+  }
+
   return {
     title: nested?.name || item?.title || "Room",
-    heading: item?.heading || "",
-    code: item?.code || "",
     slug: item?.slug || "",
     description: truncateHtmlByWords(
       nested?.paragraph || item?.paragraph || item?.heading || "",
     ),
-    gallery: [...new Set(gallery)],
-    amenities: Array.isArray(item?.amenities) ? item.amenities : [],
-    singlePrice,
-    doublePrice,
-    maxOccupancy:
-      doublePrice != null ? "02 Pax" : singlePrice != null ? "01 Pax" : null,
-    hasExtraBed: priceRows.some((p) => p.type === "Extra Bed"),
+    image: gallery[0] || null,
+    fromPrice,
+    features,
   };
 }
 
@@ -83,139 +90,75 @@ function StandaloneRoomCard({ item }) {
   if (!room.slug) return null;
 
   return (
-    <article className="group relative flex flex-col gap-5 rounded-2xl border border-border bg-[#f8f5ef] p-4 shadow-sm transition-colors hover:border-heading/20 md:flex-row md:items-stretch md:gap-6 md:p-5">
-      <div className="relative h-[240px] w-full shrink-0 overflow-hidden rounded-xl bg-border md:h-auto md:min-h-[280px] md:w-[380px]">
-        {room.gallery.length > 0 ? (
-          <Carousel
-            className="h-full w-full"
-            opts={{ loop: room.gallery.length > 1 }}
-          >
-            <CarouselContent className="h-full">
-              {room.gallery.map((img, idx) => (
-                <CarouselItem key={`${room.slug}-${idx}`} className="h-full">
-                  <div className="relative h-[240px] w-full md:h-full md:min-h-[280px]">
-                    <Image
-                      src={img}
-                      alt={`${room.title} image ${idx + 1}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 380px"
-                      className="object-cover"
-                      priority={idx === 0}
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            {room.gallery.length > 1 ? (
-              <>
-                <CarouselPrevious className="left-2 size-8 border-0 bg-white/80 text-heading shadow-sm hover:bg-white" />
-                <CarouselNext className="right-2 size-8 border-0 bg-white/80 text-heading shadow-sm hover:bg-white" />
-              </>
-            ) : null}
-          </Carousel>
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-colors hover:border-heading/20">
+      <div className="relative aspect-16/10 w-full overflow-hidden bg-border">
+        {room.image ? (
+          <Image
+            src={room.image}
+            alt={room.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover transition-transform duration-500 ease-smooth group-hover:scale-[1.03]"
+          />
         ) : (
-          <div className="flex h-full min-h-[240px] items-center justify-center font-body text-sm text-muted md:min-h-[280px]">
+          <div className="flex h-full min-h-48 items-center justify-center font-body text-sm text-muted">
             No image
           </div>
         )}
+
+        {room.fromPrice != null ? (
+          <div className="absolute left-3 top-3 rounded-lg bg-surface px-3 py-1.5 shadow-sm">
+            <p className="font-ui text-[10px] uppercase tracking-[0.12em] text-muted">
+              From
+            </p>
+            <p className="font-heading text-lg leading-none text-heading">
+              {formatPrice(room.fromPrice)}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 space-y-1">
-              <h3 className="font-heading text-2xl font-medium leading-tight text-heading md:text-3xl">
-                {room.title}
-              </h3>
-              {room.heading ? (
-                <p className="font-body text-sm text-gray-500 md:text-base">
-                  {room.heading}
-                </p>
-              ) : null}
-            </div>
-              {room.code ? (
-              <span className="shrink-0 rounded-full border border-gray-500 bg-white px-3 py-1 font-ui text-[10px] uppercase tracking-wider text-black shadow-sm">
-                Code: {room.code}
-              </span>
-            ) : null}
-          </div>
-
-          {room.description ? (
-            <div
-              className="line-clamp-2 font-body text-sm leading-relaxed text-heading [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0"
-              dangerouslySetInnerHTML={{ __html: room.description }}
-            />
-          ) : null}
-
-          {room.amenities.length > 0 ? (
-            <div>
-              <p className="mb-2 font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
-                Amenities
-              </p>
-              <TooltipProvider>
-                <div className="flex flex-wrap gap-2">
-                  {room.amenities.slice(0, 8).map((am, i) => {
-                    const label = am?.label || am;
-                    const Icon = getHotelAmenityIcon(label);
-                    return (
-                      <Tooltip key={am?._id || `${label}-${i}`}>
-                        <TooltipTrigger className="flex size-10 items-center justify-center rounded-2xl border border-border bg-white text-muted shadow-sm transition-colors hover:border-primary/40 hover:text-heading">
-                          <Icon className="size-4" strokeWidth={1.5} />
-                        </TooltipTrigger>
-                        <TooltipContent className="font-body text-xs">
-                          {label}
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-              </TooltipProvider>
-            </div>
-          ) : null}
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col gap-1 border-t border-gray-400 pt-3 sm:flex-row sm:gap-6">
-                <span className="font-body text-sm text-muted">
-                  Single:{" "}
-                  <strong className="font-heading text-lg font-medium text-heading">
-                    {formatPrice(room.singlePrice) || "On enquiry"}
-                  </strong>
-                </span>
-                <span className="font-body text-sm text-muted">
-                  Double:{" "}
-                  <strong className="font-heading text-lg font-medium text-heading">
-                    {formatPrice(room.doublePrice) || "On enquiry"}
-                  </strong>
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-ui text-xs text-muted">
-                {room.maxOccupancy ? (
-                  <span>
-                    Max occupancy:{" "}
-                    <span className="text-heading">{room.maxOccupancy}</span>
-                  </span>
-                ) : null}
-                <span>
-                  Extra bed:{" "}
-                  <span className="text-heading">
-                    {room.hasExtraBed ? "Available" : "No"}
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className="flex justify-end pt-1">
-              <Link
-                href={`/room/${room.slug}`}
-                className="inline-flex h-11 items-center gap-2 rounded-button bg-primary px-6 font-body text-sm text-primary-foreground transition-colors hover:bg-primary-hover"
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-5">
+        {room.features.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {room.features.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 font-body text-xs text-heading"
               >
-                Details
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </Link>
-            </div>
+                <Icon
+                  className="size-3.5 text-primary"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                {label}
+              </span>
+            ))}
           </div>
+        ) : null}
+
+        <div className="min-w-0 flex-1 space-y-2">
+          <h3 className="font-heading text-xl leading-snug text-heading md:text-2xl">
+            {room.title}
+          </h3>
+          {room.description ? (
+            <p className="font-body text-sm leading-relaxed text-muted-foreground">
+              {room.description}
+            </p>
+          ) : null}
         </div>
+
+        <Link
+          href={`/room/${room.slug}`}
+          className="mt-auto flex w-full overflow-hidden rounded-xl border border-border"
+        >
+          <span className="flex flex-1 items-center justify-center bg-white px-4 py-3 font-ui text-xs font-semibold uppercase tracking-[0.14em] text-black transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+            Book Your Stay Now
+          </span>
+          <span className="flex w-12 items-center justify-center border-l border-border bg-white text-black transition-colors duration-300 group-hover:border-primary-hover group-hover:bg-primary-hover group-hover:text-primary-foreground">
+            <ChevronRight className="size-5" aria-hidden="true" />
+          </span>
+        </Link>
       </div>
     </article>
   );
@@ -225,7 +168,7 @@ export default function StandaloneRoomsSection({ rooms = [] }) {
   if (!rooms.length) return null;
 
   return (
-    <div className="flex w-full flex-col gap-6 md:p-4">
+    <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
       {rooms.map((item, idx) => (
         <StandaloneRoomCard key={item._id || idx} item={item} />
       ))}

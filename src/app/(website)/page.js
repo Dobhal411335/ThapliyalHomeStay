@@ -39,7 +39,7 @@ export default function HomePage() {
       <RoomSection />
       <Banner />
       <RandomTourPackageSection />
-      <RetreatsSection/>
+      {/* <RetreatsSection/> */}
       <CtaSection />
       <InstaBlog />
     </>

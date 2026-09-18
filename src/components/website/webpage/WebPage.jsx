@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Globe,
   Link as LinkIcon,
+  MessageCircle,
   Phone,
   Quote,
   Share2,
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { ROOM_AMENITY_CATEGORIES } from "@/lib/roomAmenityCategories";
 import { getHotelAmenityIcon } from "@/lib/hotelAmenityIcons";
 import { getRoomAmenityCategoryIcon } from "@/lib/roomAmenityIcons";
+import { useCompanyBasicInfo } from "@/providers/CompanyBasicInfoProvider";
 function Facebook({ className }) {
   return (
     <svg
@@ -159,7 +161,7 @@ const ImageDotsCarousel = ({ images = [], alt = "" }) => {
         <img
           src={slides[0].url}
           alt={alt}
-          className="h-[240px] w-full object-cover md:h-[340px]"
+          className="h-[300px] w-full object-cover md:h-[400px]"
         />
       </div>
     );
@@ -178,7 +180,7 @@ const ImageDotsCarousel = ({ images = [], alt = "" }) => {
                 <img
                   src={img.url}
                   alt={`${alt} ${idx + 1}`}
-                  className="h-[240px] w-full object-cover md:h-[400px]"
+                  className="h-[300px] w-full object-cover md:h-[400px]"
                 />
               </CarouselItem>
             ))}
@@ -206,35 +208,104 @@ const ImageDotsCarousel = ({ images = [], alt = "" }) => {
 };
 
 const StaticSidebarCard = ({ data }) => {
-  const adImage = data.advertisementImage?.url;
-  const adUrl = data.advertisementUrl;
+  const firstAd = Array.isArray(data.advertisements)
+    ? data.advertisements.find((ad) => ad?.image?.url)
+    : null;
+  const adImage = firstAd?.image?.url || data.advertisementImage?.url;
+  const adUrl = firstAd?.url || data.advertisementUrl;
 
-  if (adImage) {
-    const card = (
-      <div className="overflow-hidden h-fit bg-white">
-        <img
-          src={adImage}
-          alt={data.title || "Advertisement"}
-          className="h-full w-full object-contain"
-        />
-      </div>
+  if (!adImage) return null;
+
+  const card = (
+    <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+      <img
+        src={adImage}
+        alt={data.title || "Advertisement"}
+        className="h-full w-full object-contain hover:scale-105 transition-all duration-300"
+      />
+    </div>
+  );
+
+  if (adUrl) {
+    return (
+      <a
+        href={adUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block transition hover:opacity-95"
+      >
+        {card}
+      </a>
     );
-
-    if (adUrl) {
-      return (
-        <a
-          href={adUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="block transition hover:opacity-95"
-        >
-          {card}
-        </a>
-      );
-    }
-
-    return card;
   }
+
+  return card;
+};
+
+const GetInTouchCard = ({ pageTitle = "" }) => {
+  const companyInfo = useCompanyBasicInfo();
+  const whatsappNumber = (
+    companyInfo?.whatsappNumber ||
+    companyInfo?.contactNumbers?.[0] ||
+    ""
+  ).replace(/\D/g, "");
+  const phoneNumber = (
+    companyInfo?.contactNumbers?.[0] ||
+    companyInfo?.whatsappNumber ||
+    ""
+  ).replace(/\D/g, "");
+
+  const whatsappMessage = [
+    "Dear Team,",
+    "",
+    `I would like to enquire about${pageTitle ? `: ${pageTitle}` : " your services"}.`,
+    "",
+    "Please share more details at your earliest convenience.",
+  ].join("\n");
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
+      <h3 className="font-heading text-xl font-semibold text-heading">
+        Get in Touch Instantly
+      </h3>
+      <p className="mt-3 font-body text-sm leading-6 text-heading">
+        Connect with us right away for quick support, inquiries, or assistance.
+        Whether you prefer a direct call, a quick message, or a live chat, our
+        team is always ready to help you get the answers you need without any
+        delay. Reach out now and experience fast, seamless communication.
+      </p>
+
+      <Link
+        href="/contact"
+        className="mt-5 flex h-11 w-full items-center justify-center rounded-full bg-primary px-4 font-ui text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+      >
+        Make an enquiry
+      </Link>
+
+      <div className="mt-3 flex gap-2">
+        {phoneNumber ? (
+          <Link
+            href={`tel:+${phoneNumber}`}
+            className="flex items-center justify-center rounded-full border border-border bg-white p-3 text-heading transition-colors hover:bg-surface"
+            aria-label="Call us"
+          >
+            <Phone className="size-4" />
+          </Link>
+        ) : null}
+        {whatsappNumber ? (
+          <Link
+            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-success py-2.5 font-ui text-xs font-semibold text-white transition-colors hover:bg-success/90"
+          >
+            <MessageCircle className="size-4" />
+            WhatsApp
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
 };
 
 const AuthorCard = ({ data }) => {
@@ -422,12 +493,34 @@ const WebPage = ({ data }) => {
     isFilledText(data.firstTitle) ||
     isFilledText(data.secondTitle) ||
     tags.length > 0;
-  const hasMainTopImage = !!data.imageFirst?.url;
+  const hasMainTopImage = !!data.imageFirst?.url || !!data.imageFirstMobile?.url;
   const hasTopHeaderContent = hasTopMetaContent || hasMainTopImage;
   const isBannerOnlyTop =
-    !isDesignThree && !!data.bannerImage?.url && !hasTopHeaderContent;
+    !isDesignThree &&
+    (!!data.bannerImage?.url || !!data.bannerImageMobile?.url) &&
+    !hasTopHeaderContent;
   const headerImage =
     data.imageFirst?.url || paragraphImages[0] || data.sideThumbImage?.url;
+  const headerImageMobile =
+    data.imageFirstMobile?.url ||
+    data.imageFirst?.url ||
+    paragraphImages[0] ||
+    data.sideThumbImage?.url;
+  const bannerImageDesktop = data.bannerImage?.url || data.bannerImageMobile?.url;
+  const bannerImageMobile =
+    data.bannerImageMobile?.url || data.bannerImage?.url;
+  const designHeaderDesktop =
+    data.bannerImage?.url ||
+    data.imageFirst?.url ||
+    data.bannerImageMobile?.url ||
+    data.imageFirstMobile?.url ||
+    "";
+  const designHeaderMobile =
+    data.bannerImageMobile?.url ||
+    data.imageFirstMobile?.url ||
+    data.bannerImage?.url ||
+    data.imageFirst?.url ||
+    "";
   const leadParagraph = isDesignTwo ? paragraphs[0] : null;
   const contentParagraphs = isDesignTwo ? paragraphs.slice(1) : paragraphs;
   const designOneLeadParagraph =
@@ -461,12 +554,19 @@ const WebPage = ({ data }) => {
     return (
       <div className="min-h-screen bg-background font-geist text-gray-900">
         {/* Top Banner */}
-        <div
-          className="relative h-[250px] md:h-[400px] w-full bg-cover bg-center flex items-end pb-10 pl-6 md:pl-20"
-          style={{
-            backgroundImage: `url(${data.bannerImage?.url || data.imageFirst?.url || ""})`,
-          }}
-        >
+        <div className="relative h-[250px] md:h-[400px] w-full flex items-end pb-10 pl-6 md:pl-20">
+          {designHeaderMobile ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center md:hidden"
+              style={{ backgroundImage: `url(${designHeaderMobile})` }}
+            />
+          ) : null}
+          {designHeaderDesktop ? (
+            <div
+              className="absolute inset-0 hidden bg-cover bg-center md:block"
+              style={{ backgroundImage: `url(${designHeaderDesktop})` }}
+            />
+          ) : null}
           <div className="absolute inset-0 bg-black/5"></div>
           <div className="relative z-10 text-white">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
@@ -842,12 +942,19 @@ const WebPage = ({ data }) => {
     return (
       <div className="min-h-screen bg-background font-geist text-gray-900">
         {/* Top Banner */}
-        <div
-          className="relative h-[250px] md:h-[400px] w-full bg-cover bg-center flex items-end pb-10 pl-6 md:pl-20"
-          style={{
-            backgroundImage: `url(${data.bannerImage?.url || data.imageFirst?.url || ""})`,
-          }}
-        >
+        <div className="relative h-[250px] md:h-[400px] w-full flex items-end pb-10 pl-6 md:pl-20">
+          {designHeaderMobile ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center md:hidden"
+              style={{ backgroundImage: `url(${designHeaderMobile})` }}
+            />
+          ) : null}
+          {designHeaderDesktop ? (
+            <div
+              className="absolute inset-0 hidden bg-cover bg-center md:block"
+              style={{ backgroundImage: `url(${designHeaderDesktop})` }}
+            />
+          ) : null}
           <div className="relative z-10 text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
               {data.secondTitle || ""}
@@ -944,12 +1051,19 @@ const WebPage = ({ data }) => {
     return (
       <div className="min-h-screen bg-background font-geist text-gray-900">
         {/* Top Banner */}
-        <div
-          className="relative h-[250px] md:h-[450px] w-full bg-center bg-no-repeat flex items-end pb-10 pl-6 md:pl-20"
-          style={{
-            backgroundImage: `url(${data.bannerImage?.url || data.imageFirst?.url || ""})`,
-          }}
-        >
+        <div className="relative h-[250px] md:h-[450px] w-full flex items-end pb-10 pl-6 md:pl-20">
+          {designHeaderMobile ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat md:hidden"
+              style={{ backgroundImage: `url(${designHeaderMobile})` }}
+            />
+          ) : null}
+          {designHeaderDesktop ? (
+            <div
+              className="absolute inset-0 hidden bg-cover bg-center bg-no-repeat md:block"
+              style={{ backgroundImage: `url(${designHeaderDesktop})` }}
+            />
+          ) : null}
           <div className="absolute inset-0 bg-black/5"></div>
           <div className="relative z-10 text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
@@ -1151,12 +1265,19 @@ const WebPage = ({ data }) => {
     return (
       <div className="min-h-screen bg-background font-geist text-gray-900">
         {/* Top Banner */}
-        <div
-          className="relative h-[250px] md:h-[400px] w-full bg-cover bg-no-repeat bg-center flex items-end pb-10 pl-6 md:pl-20"
-          style={{
-            backgroundImage: `url(${data.bannerImage?.url || data.imageFirst?.url || ""})`,
-          }}
-        >
+        <div className="relative h-[250px] md:h-[400px] w-full flex items-end pb-10 pl-6 md:pl-20">
+          {designHeaderMobile ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat md:hidden"
+              style={{ backgroundImage: `url(${designHeaderMobile})` }}
+            />
+          ) : null}
+          {designHeaderDesktop ? (
+            <div
+              className="absolute inset-0 hidden bg-cover bg-center bg-no-repeat md:block"
+              style={{ backgroundImage: `url(${designHeaderDesktop})` }}
+            />
+          ) : null}
           {/* <div className="absolute inset-0 bg-black/40"></div> */}
           <div className="relative z-10 text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
@@ -1273,11 +1394,21 @@ const WebPage = ({ data }) => {
 
     return (
       <div className="min-h-screen bg-background font-body text-heading">
-        {data.bannerImage?.url && (
-          <div
-            className="relative h-[100px] w-full bg-cover bg-center md:h-[400px]"
-            style={{ backgroundImage: `url(${data.bannerImage.url})` }}
-          />
+        {(bannerImageMobile || bannerImageDesktop) && (
+          <div className="relative h-[250px] w-full md:h-[400px]">
+            {bannerImageMobile ? (
+              <div
+                className="absolute inset-0 bg-cover bg-center md:hidden"
+                style={{ backgroundImage: `url(${bannerImageMobile})` }}
+              />
+            ) : null}
+            {bannerImageDesktop ? (
+              <div
+                className="absolute inset-0 hidden bg-cover bg-center md:block"
+                style={{ backgroundImage: `url(${bannerImageDesktop})` }}
+              />
+            ) : null}
+          </div>
         )}
 
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
@@ -1363,11 +1494,21 @@ const WebPage = ({ data }) => {
 
     return (
       <div className="min-h-screen bg-background font-body text-heading">
-        {data.bannerImage?.url && (
-          <div
-            className="relative h-[150px] bg-contain md:bg-cover w-full bg-center md:h-[400px]"
-            style={{ backgroundImage: `url(${data.bannerImage.url})` }}
-          />
+        {(bannerImageMobile || bannerImageDesktop) && (
+          <div className="relative h-[250px] w-full md:h-[500px]">
+            {bannerImageMobile ? (
+              <div
+                className="absolute inset-0 bg-contain bg-center md:hidden"
+                style={{ backgroundImage: `url(${bannerImageMobile})` }}
+              />
+            ) : null}
+            {bannerImageDesktop ? (
+              <div
+                className="absolute inset-0 hidden bg-cover bg-center md:block"
+                style={{ backgroundImage: `url(${bannerImageDesktop})` }}
+              />
+            ) : null}
+          </div>
         )}
 
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 bg-background">
@@ -1449,36 +1590,67 @@ const WebPage = ({ data }) => {
           >
             {isDesignThree ? (
               <div className="overflow-hidden">
-                {designThreeHeroImages[0] && (
-                  <img
-                    src={designThreeHeroImages[0]}
-                    alt={data.title}
-                    className="h-[240px] w-full object-cover md:h-[350px]"
-                  />
+                {(data.imageFirstMobile?.url ||
+                  data.imageFirst?.url ||
+                  designThreeHeroImages[0]) && (
+                  <>
+                    <img
+                      src={
+                        data.imageFirstMobile?.url ||
+                        data.imageFirst?.url ||
+                        designThreeHeroImages[0]
+                      }
+                      alt={data.title}
+                      className="h-[240px] w-full object-cover md:hidden"
+                    />
+                    {(data.imageFirst?.url || designThreeHeroImages[0]) && (
+                      <img
+                        src={data.imageFirst?.url || designThreeHeroImages[0]}
+                        alt={data.title}
+                        className="hidden h-[350px] w-full object-cover md:block"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             ) : isBannerOnlyTop ? (
               <div className="overflow-hidden">
-                <img
-                  src={data.bannerImage.url}
-                  alt={data.title}
-                  className="h-[240px] md:h-[350px] w-full object-cover"
-                />
+                {bannerImageMobile ? (
+                  <img
+                    src={bannerImageMobile}
+                    alt={data.title}
+                    className="h-[240px] w-full object-cover md:hidden"
+                  />
+                ) : null}
+                {bannerImageDesktop ? (
+                  <img
+                    src={bannerImageDesktop}
+                    alt={data.title}
+                    className="hidden h-[500px] w-full object-cover md:block"
+                  />
+                ) : null}
               </div>
             ) : (
               <div className="overflow-hidden">
-                {headerImage && (
+                {headerImageMobile ? (
+                  <img
+                    src={headerImageMobile}
+                    alt={data.title}
+                    className="h-[220px] w-full object-contain md:hidden"
+                  />
+                ) : null}
+                {headerImage ? (
                   <img
                     src={headerImage}
                     alt={data.title}
-                    className="h-[220px] w-full object-contain md:h-[250px]"
+                    className="hidden h-[250px] w-full object-contain md:block"
                   />
-                )}
+                ) : null}
               </div>
             )}
-            {!isDesignThree && (
+            {/* {!isDesignThree && (
               <div className="px-5 md:px-10 py-5 ">
-                {isFilledText(data.firstTitle) && (
+                {/* {isFilledText(data.firstTitle) && (
                   <span className="hidden text-md my-3 font-medium text-gray-600 md:block">
                     {data.firstTitle}
                   </span>
@@ -1490,7 +1662,7 @@ const WebPage = ({ data }) => {
                   <p className="mt-2 max-w-3xl text-md leading-8 text-gray-700">
                     {data.secondTitle}
                   </p>
-                )}
+                )} 
                 {tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {tags.map((tag, idx) => (
@@ -1503,7 +1675,7 @@ const WebPage = ({ data }) => {
                     ))}
                   </div>
                 )}
-                <div className="mt-7 flex flex-wrap items-center gap-4 text-md text-black">
+                {/* <div className="mt-7 flex flex-wrap items-center gap-4 text-md text-black">
                   <div className="flex items-center gap-4">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8e4ff] text-sm font-bold text-[#4f46e5]">
                       {(data.sideThumbName || "E").charAt(0)}
@@ -1518,7 +1690,7 @@ const WebPage = ({ data }) => {
                   </span>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
@@ -1801,8 +1973,9 @@ const WebPage = ({ data }) => {
             ) : (
               <>
                 <aside className="space-y-5 lg:sticky lg:top-20 bg-background">
-                  <StaticSidebarCard data={data} />
                   <AuthorCard data={data} />
+                  <StaticSidebarCard data={data} />
+                  <GetInTouchCard pageTitle={data.title || data.firstTitle || ""} />
                   <ShareCard slug={data.slug} />
                 </aside>
 

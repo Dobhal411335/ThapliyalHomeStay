@@ -105,13 +105,16 @@ export async function DELETE(request) {
 
     // Check top-level image fields
     addKey(webpage.imageFirst);
+    addKey(webpage.imageFirstMobile);
     addKey(webpage.bannerImage);
+    addKey(webpage.bannerImageMobile);
     addKey(webpage.mainProfileImage);
     addKey(webpage.paragraphFirstImage);
     addKey(webpage.paragraphSecondImage);
     addKey(webpage.sideThumbImage);
 
     // Check arrays
+    addKey(webpage.advertisementImage);
     if (Array.isArray(webpage.advertisements)) {
       webpage.advertisements.forEach(ad => addKey(ad.image));
     }

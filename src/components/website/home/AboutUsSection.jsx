@@ -1,34 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Clock, Sparkles } from "lucide-react";
 
 import { Container } from "@/components/common/Container";
 import { Section } from "@/components/common/Section";
-import { Skeleton } from "@/components/ui/skeleton";
+import { FeaturedHotelsHomeSection } from "./FeaturedHotelsHomeSection";
 
 export default function AboutUsSection() {
   const [offerDetails, setOfferDetails] = useState(null);
-  const [banners, setBanners] = useState([]);
-  const [bannersLoading, setBannersLoading] = useState(true);
 
   useEffect(() => {
-
-
-    const fetchBanners = async () => {
-      try {
-        const response = await fetch("/api/bannerSection1st");
-        const data = await response.json();
-        setBanners(Array.isArray(data) ? data : []);
-      } catch {
-        setBanners([]);
-      } finally {
-        setBannersLoading(false);
-      }
-    };
-
     const fetchOffers = async () => {
       try {
         const response = await fetch("/api/offerDetails");
@@ -39,7 +22,6 @@ export default function AboutUsSection() {
       }
     };
 
-    fetchBanners();
     fetchOffers();
   }, []);
 
@@ -55,7 +37,6 @@ export default function AboutUsSection() {
     promoBanner &&
     (hasText(promoBanner.description) || hasText(promoBanner.link));
   const hasOffers = showLastMinuteDeal || showPromoBanner;
-  const showBanners = bannersLoading || banners.length > 0;
 
   return (
     <>
@@ -136,50 +117,8 @@ export default function AboutUsSection() {
         </Section>
       )}
 
-      {showBanners && (
-        <section className="w-full bg-background">
-          {bannersLoading ? (
-            <Skeleton className="h-[400px] px-2 w-full rounded-none md:h-[430px]" />
-          ) : (
-            <div className="flex w-full flex-col">
-              {banners.map((item) => (
-                <Link
-                  key={item._id}
-                  href={item.buttonLink || "#"}
-                  target={item.buttonLink ? "_blank" : undefined}
-                  rel={item.buttonLink ? "noopener noreferrer" : undefined}
-                  className="group relative block w-full overflow-hidden bg-border"
-                >
-                  {/* Desktop */}
-                  <div className="relative hidden h-[430px] w-full md:block">
-                    {item.image?.url ? (
-                      <Image
-                        src={item.image.url}
-                        alt={item.title || "Promotional banner"}
-                        fill
-                        sizes="100vw"
-                        className="object-cover object-center transition-transform duration-300 ease-smooth group-hover:scale-[1.02]"
-                      />
-                    ) : null}
-                  </div>
-                  {/* Mobile */}
-                  <div className="relative h-[330px] px-1 w-full md:hidden">
-                    {(item.mobileImage?.url || item.image?.url) ? (
-                      <Image
-                        src={item.mobileImage?.url || item.image.url}
-                        alt={item.title || "Promotional banner"}
-                        fill
-                        sizes="100vw"
-                        className="object-cover object-center transition-transform duration-300 ease-smooth group-hover:scale-[1.02]"
-                      />
-                    ) : null}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+      <FeaturedHotelsHomeSection/>
+
     </>
   );
 }

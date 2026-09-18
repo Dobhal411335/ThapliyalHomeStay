@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -12,7 +12,6 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   const [banners, setBanners] = useState([]);
@@ -21,7 +20,13 @@ export function HeroSection() {
   const [desktopSelectedIndex, setDesktopSelectedIndex] = useState(0);
   const [mobileApi, setMobileApi] = useState(null);
   const [mobileSelectedIndex, setMobileSelectedIndex] = useState(0);
-  const plugin = useRef(Autoplay({ delay: 5000, stopOnInteraction: false }));
+  const [mobileViewportHeight, setMobileViewportHeight] = useState(null);
+  const desktopPlugin = useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: false }),
+  );
+  const mobilePlugin = useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: false }),
+  );
 
   useEffect(() => {
     const fetchBanners = async () => {
@@ -29,7 +34,7 @@ export function HeroSection() {
         const response = await fetch(`/api/addBanner`);
         const data = await response.json();
         setBanners(Array.isArray(data) ? data : []);
-      } catch (error) {
+      } catch {
         setBanners([]);
       } finally {
         setIsLoading(false);
@@ -38,12 +43,10 @@ export function HeroSection() {
     fetchBanners();
   }, []);
 
-  // Desktop carousel effect
   useEffect(() => {
     if (!desktopApi) return;
     const onSelect = () => {
-      const idx = desktopApi.selectedScrollSnap();
-      setDesktopSelectedIndex(idx);
+      setDesktopSelectedIndex(desktopApi.selectedScrollSnap());
     };
     desktopApi.on("select", onSelect);
     onSelect();
@@ -52,33 +55,71 @@ export function HeroSection() {
     };
   }, [desktopApi]);
 
-  // Mobile carousel effect
+  const syncMobileHeight = useCallback(() => {
+    if (!mobileApi) return;
+    const slides = mobileApi.slideNodes();
+    const index = mobileApi.selectedScrollSnap();
+    const activeSlide = slides[index];
+    if (!activeSlide) return;
+
+    const nextHeight = Math.ceil(activeSlide.getBoundingClientRect().height);
+    if (nextHeight > 0) {
+      setMobileViewportHeight(nextHeight);
+    }
+  }, [mobileApi]);
+
   useEffect(() => {
     if (!mobileApi) return;
+
     const onSelect = () => {
-      const idx = mobileApi.selectedScrollSnap();
-      setMobileSelectedIndex(idx);
+      setMobileSelectedIndex(mobileApi.selectedScrollSnap());
+      // Wait a frame so the active slide image can settle
+      requestAnimationFrame(() => syncMobileHeight());
     };
+
     mobileApi.on("select", onSelect);
+    mobileApi.on("reInit", onSelect);
     onSelect();
+
     return () => {
       mobileApi.off("select", onSelect);
+      mobileApi.off("reInit", onSelect);
     };
-  }, [mobileApi]);
+  }, [mobileApi, syncMobileHeight]);
+
+  // Recalculate when banners change / images finish loading
+  useEffect(() => {
+    if (!mobileApi || banners.length === 0) return undefined;
+
+    const slides = mobileApi.slideNodes();
+    const images = slides.flatMap((slide) =>
+      Array.from(slide.querySelectorAll("img")),
+    );
+
+    const handleLoad = () => syncMobileHeight();
+    images.forEach((img) => {
+      if (img.complete) return;
+      img.addEventListener("load", handleLoad);
+    });
+
+    syncMobileHeight();
+    window.addEventListener("resize", syncMobileHeight);
+
+    return () => {
+      images.forEach((img) => img.removeEventListener("load", handleLoad));
+      window.removeEventListener("resize", syncMobileHeight);
+    };
+  }, [mobileApi, banners, syncMobileHeight]);
 
   if (isLoading) {
     return (
-      <section className="relative h-[100px] md:h-[430px] w-full overflow-hidden z-[160]">
-        <Carousel
-          className="h-full w-full"
-          plugins={[plugin.current]}
-          onMouseLeave={plugin.current.reset}
-        >
+      <section className="relative z-[160] h-[100px] w-full overflow-hidden md:h-[430px]">
+        <Carousel className="h-full w-full" plugins={[desktopPlugin.current]}>
           <CarouselContent className="h-full">
             {[...Array(4)].map((_, index) => (
               <CarouselItem key={index} className="h-[100px] md:h-[430px]">
                 <div className="relative h-full w-full">
-                  <Skeleton className="h-[100px] md:h-full w-full rounded-none" />
+                  <Skeleton className="h-[100px] w-full rounded-none md:h-full" />
                 </div>
               </CarouselItem>
             ))}
@@ -91,7 +132,6 @@ export function HeroSection() {
   if (banners.length === 0) {
     return (
       <section className="relative flex min-h-[calc(100vh-80px)] items-end overflow-hidden bg-image-dark">
-        {/* Background photo */}
         <Image
           src="/hero.jpg"
           alt="Ganga river at sunset, Rishikesh"
@@ -100,13 +140,12 @@ export function HeroSection() {
           className="object-cover object-center"
         />
 
-        {/* Dark gradient overlay so text stays readable */}
         <div
           className="absolute inset-0 bg-linear-to-t from-image-dark via-image-dark/55 to-image-dark/10"
           aria-hidden="true"
         />
 
-        <div className="container relative z-10 px-5 md:px-10 md:pb-20 md:pt-40 py-10 lg:px-20">
+        <div className="container relative z-10 px-5 py-10 md:px-10 md:pt-40 md:pb-20 lg:px-20">
           <p className="font-ui text-xs uppercase tracking-[0.35em] text-white">
             Rishikesh · Uttarakhand
           </p>
@@ -117,14 +156,13 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-md font-body text-sm leading-[1.85] text-white/65 lg:text-lg">
-            Thapliyal Home Stay is a quiet sanctuary — built for
-            travellers who want to slow down, sit with themselves, and return
-            softer than they came.
+            OnlyHotel is a quiet sanctuary — built for travellers who want to
+            slow down, sit with themselves, and return softer than they came.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Link
-              href="/plan-your-own"
+              href="/retreats"
               className="inline-flex h-11 items-center gap-2 rounded-button bg-primary px-7 font-body text-sm text-white transition-colors hover:bg-primary-hover"
             >
               Explore retreats
@@ -143,30 +181,31 @@ export function HeroSection() {
   }
 
   return (
-    <section className="bg-[#fcf7f1] relative xl:h-full h-full w-full overflow-hidden z-0 group">
-      <div className="hidden xl:block w-full h-[calc(100vh-85px)]">
-        <div className="hidden xl:block w-full h-full">
+    <section className="group relative z-0 w-full bg-[#fcf7f1] xl:overflow-hidden">
+      <div className="hidden h-[calc(100vh-85px)] w-full xl:block">
+        <div className="hidden h-full w-full xl:block">
           <Carousel
-            className="h-[calc(100vh-80px)] w-full"
-            plugins={[plugin.current]}
-            onMouseLeave={plugin.current.reset}
+            className="h-[calc(100vh-85px)] w-full"
+            plugins={[desktopPlugin.current]}
+            onMouseLeave={desktopPlugin.current.reset}
             setApi={setDesktopApi}
           >
             <CarouselContent className="h-full">
               {banners.map((item, index) => (
-                <CarouselItem key={index} className="h-[calc(100vh-80px)]">
+                <CarouselItem key={index} className="h-[calc(100vh-85px)]">
                   <Link
                     href={item?.buttonLink || "#"}
                     className="block h-full w-full"
                   >
-                    <div className="relative h-[calc(100vh-80px)] w-full flex items-center justify-center bg-black">
+                    <div className="relative h-full w-full overflow-hidden bg-black">
                       <Image
-                        src={item?.frontImg?.url || " "}
+                        src={item?.frontImg?.url || "/placeholder.png"}
                         alt={item?.title || "Banner Image"}
                         fill
                         quality={100}
                         priority
-                        className="object-cover"
+                        sizes="100vw"
+                        className="object-cover object-center"
                       />
                     </div>
                   </Link>
@@ -174,21 +213,21 @@ export function HeroSection() {
               ))}
             </CarouselContent>
 
-            {/* Navigation Arrows */}
-            <CarouselPrevious className="left-4 md:left-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border rounded-full p-5 bg-white/20 text-white hover:bg-white/40" />
-            <CarouselNext className="right-4 md:right-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border rounded-full p-5 bg-white/20 text-white hover:bg-white/40" />
+            <CarouselPrevious className="left-4 rounded-full border bg-white/20 p-5 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:bg-white/40 md:left-16" />
+            <CarouselNext className="right-4 rounded-full border bg-white/20 p-5 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:bg-white/40 md:right-16" />
           </Carousel>
 
-          {/* Custom Pagination Dots */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
+          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             {banners.map((_, index) => (
               <button
                 key={index}
+                type="button"
                 onClick={() => desktopApi?.scrollTo(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === desktopSelectedIndex
-                    ? "bg-white w-6"
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                  index === desktopSelectedIndex
+                    ? "w-6 bg-white"
                     : "bg-white/50"
-                  }`}
+                }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -196,47 +235,62 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Mobile Carousel */}
-      <div className="block xl:hidden relative w-full h-[450px] overflow-hidden">
+      {/* Mobile — height follows active slide only (fixes tallest-slide gap) */}
+      <div className="relative block w-full xl:hidden">
         <Carousel
-          className="w-full h-full"
-          plugins={[plugin.current]}
+          className="w-full"
+          plugins={[mobilePlugin.current]}
           setApi={setMobileApi}
         >
-          <CarouselContent className="h-full ml-0">
-            {banners.map((banner, index) => (
-              <CarouselItem key={index} className="h-[450px] pl-0">
-                <Link
-                  href={banner?.buttonLink || "#"}
-                  className="block w-full h-full"
-                >
-                  <div className="relative w-full h-full overflow-hidden bg-black">
-                    <Image
-                      src={banner?.mobileImg?.url || banner?.frontImg?.url || " "}
-                      alt={banner?.title || "MobileBanner Image"}
-                      fill
-                      quality={100}
-                      priority
-                      className="w-full h-full object-contain object-center"
-                    />
-                  </div>
-                </Link>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
+          <div
+            className="overflow-hidden transition-[height] duration-300 ease-out"
+            style={
+              mobileViewportHeight
+                ? { height: mobileViewportHeight }
+                : undefined
+            }
+          >
+            <CarouselContent className="ml-0 items-start">
+              {banners.map((banner, index) => {
+                const src =
+                  banner?.mobileImg?.url ||
+                  banner?.frontImg?.url ||
+                  "/placeholder.png";
 
-          {/* Pagination Dots */}
+                return (
+                  <CarouselItem key={index} className="basis-full pl-0">
+                    <Link
+                      href={banner?.buttonLink || "#"}
+                      className="block w-full leading-none"
+                    >
+                      {/* Native img keeps true natural height (no forced aspect) */}
+                      <img
+                        src={src}
+                        alt={banner?.title || "Mobile banner"}
+                        className="block h-auto w-full"
+                        decoding="async"
+                        fetchPriority={index === 0 ? "high" : "auto"}
+                        onLoad={syncMobileHeight}
+                      />
+                    </Link>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </div>
+
           {banners.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
               {banners.map((_, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => mobileApi?.scrollTo(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${index === mobileSelectedIndex
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === mobileSelectedIndex
                       ? "w-6 bg-white"
                       : "w-2 bg-white/60"
-                    }`}
+                  }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}

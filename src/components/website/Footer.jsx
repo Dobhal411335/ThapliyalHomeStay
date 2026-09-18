@@ -145,9 +145,13 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-footer text-white" aria-label="Site footer">
+    <footer
+      className="bg-footer bg-repeat text-white"
+      style={{ backgroundImage: "url('/bg-pattern-3.jpg')" }}
+      aria-label="Site footer"
+    >
       <div className="container p-5 md:p-10">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-3 pb-5">
           <div>
             <Logo tone="light" name={companyName} imageSrc={footerLogoSrc} />
             <p className="mt-6 mb-4 max-w-md text-justify font-body text-sm leading-7 text-white">

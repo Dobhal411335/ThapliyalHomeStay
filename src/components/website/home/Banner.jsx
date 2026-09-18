@@ -3,40 +3,38 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 
 import { Container } from "@/components/common/Container";
 import { Section } from "@/components/common/Section";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+const DESC_WORD_LIMIT = 55;
+
+function truncateHtmlByWords(html = "", wordLimit = DESC_WORD_LIMIT) {
+  const raw = String(html || "").trim();
+  if (!raw) return "";
+
+  const text = raw
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/(p|div|li|h[1-6])>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = text.split(" ").filter(Boolean);
+  if (words.length === 0) return "";
+  if (words.length <= wordLimit) return raw;
+
+  return `${words.slice(0, wordLimit).join(" ")}…`;
+}
 
 export default function Banner() {
-  const [featuredOffers, setFeaturedOffers] = useState([]);
   const [bannerSection2nd, setBannerSection2nd] = useState([]);
-  const [offersLoading, setOffersLoading] = useState(true);
   const [bannersLoading, setBannersLoading] = useState(true);
-
+  const [packages, setPackages] = useState([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
   useEffect(() => {
-
-
-    const fetchOffers = async () => {
-      try {
-        const res = await fetch("/api/addFeaturedOffer");
-        const data = await res.json();
-        setFeaturedOffers(Array.isArray(data) ? data : []);
-      } catch {
-        setFeaturedOffers([]);
-      } finally {
-        setOffersLoading(false);
-      }
-    };
-
     const fetchBanners = async () => {
       try {
         const response = await fetch("/api/bannerSection2nd");
@@ -48,167 +46,191 @@ export default function Banner() {
         setBannersLoading(false);
       }
     };
-    fetchOffers();
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch("/api/getRandomPackages");
+        const data = await res.json();
+        setPackages(data.packages?.length ? data.packages : []);
+      } catch {
+        setPackages([]);
+      } finally {
+        setPackagesLoading(false);
+      }
+    };
     fetchBanners();
+    fetchPackages();
   }, []);
-
-  const showOffers = offersLoading || featuredOffers.length > 0;
+  const formatNumeric = (num) => new Intl.NumberFormat("en-IN").format(num);
+  const showPackages = packagesLoading || packages.length > 0;
   const showBanners = bannersLoading || bannerSection2nd.length > 0;
 
   return (
     <>
-      {showOffers && (
-        <Section spacing="sm" className="bg-background">
+
+      {showPackages && (
+        <Section spacing="sm" className="bg-white overflow-hidden">
           <Container>
-            <div className="mb-12 max-w-2xl">
+            <div className="mb-12">
               <p className="font-ui text-xs uppercase tracking-[0.25em] text-muted">
-                Stay with us
+                Journeys
               </p>
               <h2 className="mt-5 font-heading text-4xl leading-[1.15] text-heading md:text-5xl">
-                Spaces shaped for{" "}
-                <em className="italic text-primary">stillness</em>.
+                You Will
+                <em className="italic text-primary"> Experience</em>.
               </h2>
-              <p className="mt-5 max-w-xl font-body text-base leading-[1.9] text-foreground">
-                Trusted stays in and around Rishikesh — transparent booking,
-                a light deposit, and the quiet assurance that someone has
-                already held the room for you.
+              <p className="mt-5 text-justify font-body text-base leading-[1.9] text-black">
+                Experience the joyful spirit of Rishikesh through yoga,
+                meditation, and soulful adventures. Witness the sacred Ganga
+                Aarti, explore waterfalls on refreshing hikes, connect with
+                nature, meditate beside the Ganga, and immerse yourself in
+                healing sound vibrations. A beautiful journey of movement,
+                connection, inner peace, and unforgettable moments.
               </p>
             </div>
 
-            {offersLoading ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, idx) => (
-                  <div key={idx} className="flex flex-col gap-4">
-                    <Skeleton className="aspect-[4/3] w-full rounded-[var(--radius-image)]" />
-                    <Skeleton className="h-5 w-2/3" />
-                    <Skeleton className="h-4 w-1/3" />
+            {packagesLoading ? (
+              <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col rounded-card border border-border bg-white p-6 md:p-8"
+                  >
+                    <Skeleton className="mb-6 aspect-[4/3] w-full rounded-[var(--radius-image)]" />
+                    <div className="flex items-start justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-8" />
+                    </div>
+                    <Skeleton className="mt-4 h-8 w-3/4" />
+                    <Skeleton className="mt-2 h-4 w-1/2" />
+                    <div className="mt-6 border-t border-border pt-6">
+                      <Skeleton className="h-10 w-32" />
+                    </div>
+                    <Skeleton className="mt-8 h-10 w-full rounded-button" />
                   </div>
                 ))}
               </div>
             ) : (
-              <Carousel
-                opts={{ align: "start", loop: false }}
-                className="w-full"
-              >
-                <CarouselContent className="">
-                  {featuredOffers.map((item) => (
-                    <CarouselItem
-                      key={item._id || item.propertyName}
-                      className="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 px-2"
+              <div className="mt-14 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {packages.map((item) => {
+                  const descriptionHtml = truncateHtmlByWords(
+                    item?.basicDetails?.smallDesc ||
+                      item?.basicDetails?.fullDesc ||
+                      "",
+                  );
+                  const price = Number(item?.price);
+
+                  return (
+                    <article
+                      key={item._id || item.slug}
+                      className="group flex h-full flex-col rounded-card border border-border bg-white p-4"
                     >
-                      <Link
-                        href={item.buttonLink || "#"}
-                        target={item.buttonLink ? "_blank" : undefined}
-                        rel={
-                          item.buttonLink ? "noopener noreferrer" : undefined
-                        }
-                        className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface transition-colors duration-[var(--duration-fast)] hover:border-heading/20"
-                      >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-border">
-                          {item.image?.url ? (
-                            <Image
-                              src={item.image.url}
-                              alt={
-                                item.propertyName ||
-                                item.title ||
-                                "Featured stay"
-                              }
-                              fill
-                              sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
-                              className="object-cover transition-transform duration-300 ease-smooth group-hover:scale-[1.03]"
+                      <div className="relative mx-auto mb-6 h-[450px] w-[650px] max-w-full shrink-0 overflow-hidden rounded-image bg-border">
+                        <Image
+                          src={
+                            item?.basicDetails?.thumbnail?.url ||
+                            "/placeholder.png"
+                          }
+                          alt={item?.packageName || "Tour package"}
+                          fill
+                          sizes="650px"
+                          quality={100}
+                          className="object-cover object-center transition-transform duration-(--duration-slow) ease-(--ease-smooth) group-hover:scale-[1.03]"
+                        />
+                      </div>
+
+                      <div className="flex min-h-0 flex-1 flex-col">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="font-sans text-[12px] uppercase tracking-[0.2em] text-black">
+                            {item?.basicDetails?.duration
+                              ? `${item.basicDetails.duration} Days`
+                              : "Flexible"}
+                          </span>
+                          {Number.isFinite(price) ? (
+                            <span className="shrink-0 font-heading text-lg font-medium text-heading">
+                              {price === 0
+                                ? "On enquiry"
+                                : `₹${formatNumeric(price)}*`}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <h3 className="mt-2 font-sans text-xl text-black line-clamp-2">
+                          {item.packageName}
+                        </h3>
+                        {item?.basicDetails?.location ? (
+                          <p className="mt-1 flex items-center gap-1.5 font-body text-md italic text-black">
+                            <MapPin className="size-3.5 shrink-0" />
+                            {item.basicDetails.location}
+                          </p>
+                        ) : null}
+
+                        {descriptionHtml ? (
+                          <div
+                            className="mt-3 line-clamp-4 font-body text-sm leading-relaxed text-muted [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0"
+                            dangerouslySetInnerHTML={{
+                              __html: descriptionHtml,
+                            }}
+                          />
+                        ) : null}
+
+                        <div className="mt-auto pt-8">
+                          <Link
+                            href={`/package/${item.slug}`}
+                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-button border border-gray-400 bg-foreground/10 px-5 font-body text-sm text-black transition-colors hover:border-heading/40 hover:bg-foreground hover:text-white"
+                          >
+                            View Details
+                            <ArrowUpRight
+                              className="size-4"
+                              aria-hidden="true"
                             />
-                          ) : null}
-                          {item.subDestination ? (
-                            <span className="absolute left-4 top-4 font-ui text-[10px] uppercase tracking-[0.2em] text-white">
-                              <span className="rounded-[var(--radius-button)] border border-white/20 bg-image-dark/50 px-3 py-1.5 backdrop-blur-[2px]">
-                                {item.subDestination}
-                              </span>
-                            </span>
-                          ) : null}
+                          </Link>
                         </div>
-
-                        <div className="flex flex-1 flex-col justify-between gap-5 p-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <h3 className="font-heading text-xl leading-snug text-heading line-clamp-2">
-                              {item.propertyName}
-                            </h3>
-                            {item.propertyType ? (
-                              <span className="shrink-0 font-ui text-[10px] uppercase tracking-[0.15em] text-muted">
-                                {item.propertyType}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          <div className="flex items-end justify-between gap-3 border-t border-border pt-4">
-                            <div>
-                              <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-muted">
-                                From
-                              </p>
-                              <p className="mt-1 font-body text-sm text-heading">
-                                {item.price
-                                  ? `₹ ${item.price}`
-                                  : "On request"}
-                              </p>
-                            </div>
-                            <span className="inline-flex items-center gap-1 font-ui text-xs uppercase tracking-[0.15em] text-primary transition-colors duration-[var(--duration-fast)] group-hover:text-primary-hover">
-                              Details
-                              <ArrowUpRight
-                                className="size-3.5"
-                                aria-hidden="true"
-                              />
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-2 size-10 border-border bg-surface text-heading shadow-none hover:bg-background xl:-left-5" />
-                <CarouselNext className="right-2 size-10 border-border bg-surface text-heading shadow-none hover:bg-background xl:-right-5" />
-              </Carousel>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </Container>
         </Section>
       )}
-
       {showBanners && (
-        <Section spacing="sm" className="bg-background w-full">
+        <Section spacing="sm" className="bg-white w-full">
           <div className="w-full">
             {bannersLoading ? (
-              <Skeleton className="h-[400px] px-2 w-full rounded-none md:h-[430px]" />
+              <Skeleton className="h-[350px] px-2 w-full rounded-none md:h-[450px]" />
             ) : (
               <div className="flex flex-col gap-8 w-full">
                 {bannerSection2nd.map((item) => (
-                 <Link
-                  key={item._id}
-                  href={item.buttonLink || "#"}
-                  target={item.buttonLink ? "_blank" : undefined}
-                  rel={item.buttonLink ? "noopener noreferrer" : undefined}
-                  className="group relative block w-full overflow-hidden bg-border"
-                >
-                  <div className="relative hidden h-[300px] md:h-[430px] w-full md:block">
-                    {item.image?.url ? (
-                      <Image
-                        src={item.image.url}
-                        alt={item.title || "Promotional banner"}
-                        fill
-                        sizes="100vw"
-                        className="object-cover object-center transition-transform duration-[var(--duration-slow)] ease-[var(--ease-smooth)] group-hover:scale-[1.02]"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="relative h-[340px] w-full md:hidden">
-                    {(item.mobileImage?.url || item.image?.url) ? (
-                      <Image
-                        src={item.mobileImage?.url || item.image.url}
-                        alt={item.title || "Promotional banner"}
-                        fill
-                        sizes="100vw"
-                        className="object-cover object-center transition-transform duration-[var(--duration-slow)] ease-[var(--ease-smooth)] group-hover:scale-[1.02]"
-                      />
-                    ) : null}
-                  </div>
-                </Link>
+                  <Link
+                    key={item._id}
+                    href={item.buttonLink || "#"}
+                    target={item.buttonLink ? "_blank" : undefined}
+                    rel={item.buttonLink ? "noopener noreferrer" : undefined}
+                    className="group relative block w-full overflow-hidden bg-border"
+                  >
+                    <div className="relative hidden h-[300px] md:h-[400px] w-full md:block">
+                      {item.image?.url ? (
+                        <Image
+                          src={item.image.url}
+                          alt={item.title || "Promotional banner"}
+                          fill
+                          sizes="100vw"
+                          className="object-cover object-center transition-transform duration-[var(--duration-slow)] ease-[var(--ease-smooth)] group-hover:scale-[1.02]"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="relative h-[350px] w-full md:hidden">
+                      {item.mobileImage?.url || item.image?.url ? (
+                        <Image
+                          src={item.mobileImage?.url || item.image.url}
+                          alt={item.title || "Promotional banner"}
+                          fill
+                          className="object-cover object-center transition-transform duration-[var(--duration-slow)] ease-[var(--ease-smooth)] group-hover:scale-[1.02]"
+                        />
+                      ) : null}
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}

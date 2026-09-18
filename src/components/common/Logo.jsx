@@ -34,7 +34,7 @@ export function Logo({
       )}
       <span
         className={cn(
-          "font-heading text-xl tracking-tight",
+          "font-heading text-xl tracking-tight transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
           tone === "light" ? "text-surface" : "text-heading"
         )}
       >
