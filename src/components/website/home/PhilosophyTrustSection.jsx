@@ -97,7 +97,7 @@ export function PhilosophyTrustSection() {
             </h2>
             <p className="mx-auto text-justify md:text-center mt-6 max-w-2xl font-body text-sm leading-[1.9] text-black md:text-base">
               Experience the perfect blend of comfort, elegance, and warm
-              hospitality at our deluxe hotel. From thoughtfully designed rooms
+              hospitality at our deluxe HomeStay. From thoughtfully designed rooms
               and modern amenities to personalized service and a welcoming
               atmosphere, we ensure every moment of your stay is relaxing and
               memorable. Whether you are travelling for business or leisure, our
